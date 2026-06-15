@@ -1,0 +1,103 @@
+(function () {
+  // Resolved settings, kept in sync via da.onSettingsChanged.
+  var cfg = {
+    enabled: true,
+    minLength: 1,
+    sensitivity: 0.5,
+    prefix: '',
+    trigger: 'mouseup',
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function selectionRects(sel) {
+    if (!sel || sel.rangeCount === 0) return [];
+    var rects = sel.getRangeAt(0).getClientRects();
+    return Array.prototype.map.call(rects, function (r) {
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    });
+  }
+
+  function sentenceAround(sel) {
+    if (!sel || !sel.anchorNode) return null;
+    var text = sel.anchorNode.textContent || '';
+    var off = sel.anchorOffset;
+    var start = Math.max(0, text.lastIndexOf('.', off - 1) + 1);
+    var end = text.indexOf('.', off);
+    return text.slice(start, end < 0 ? undefined : end + 1).trim() || null;
+  }
+
+  // ── Core selection handler ─────────────────────────────────────────────────
+
+  function handleSelection() {
+    if (!cfg.enabled) return;
+
+    var sel = window.getSelection();
+    var raw = sel ? sel.toString().trim() : '';
+
+    if (raw.length < cfg.minLength) {
+      da.emit('clear', null);
+      return;
+    }
+
+    // double: sensitivity < 0.5 requires at least 2 chars to avoid single-key misfires
+    if (raw.length === 1 && cfg.sensitivity < 0.5) {
+      da.emit('clear', null);
+      return;
+    }
+
+    // string: optional prefix prepended to the emitted text
+    var text = cfg.prefix ? cfg.prefix + raw : raw;
+
+    da.emit('selection', {
+      text: text,
+      sentence: sentenceAround(sel),
+      rects: selectionRects(sel),
+    });
+
+    // capability check: copy to clipboard only when the host grants it
+    if (da.can('clipboard')) {
+      navigator.clipboard.writeText(raw).catch(function () {});
+    }
+  }
+
+  // ── Event wiring (respects trigger choice setting) ─────────────────────────
+
+  var listeners = [];
+
+  function wire() {
+    listeners.forEach(function (l) {
+      document.removeEventListener(l.event, l.fn);
+    });
+    listeners = [];
+
+    function add(event) {
+      document.addEventListener(event, handleSelection);
+      listeners.push({ event: event, fn: handleSelection });
+    }
+
+    if (cfg.trigger === 'mouseup' || cfg.trigger === 'both') add('mouseup');
+    if (cfg.trigger === 'selectionchange' || cfg.trigger === 'both') add('selectionchange');
+  }
+
+  // ── Live settings updates ──────────────────────────────────────────────────
+
+  da.onSettingsChanged(function (s) {
+    var rewire = s.trigger !== cfg.trigger;
+    cfg.enabled     = s.enabled;
+    cfg.minLength   = s.minLength;
+    cfg.sensitivity = s.sensitivity;
+    cfg.prefix      = s.prefix;
+    cfg.trigger     = s.trigger;
+    if (rewire) wire();
+  });
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+
+  cfg.enabled     = da.settings.enabled;
+  cfg.minLength   = da.settings.minLength;
+  cfg.sensitivity = da.settings.sensitivity;
+  cfg.prefix      = da.settings.prefix;
+  cfg.trigger     = da.settings.trigger;
+  wire();
+})();
