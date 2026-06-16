@@ -1,1 +1,2173 @@
-// Placeholder — replaced by the GH Action CI bundle (dom-text-scanner + text-source-* + string-util).
+(() => {
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/core/event-dispatcher.js
+  var EventDispatcher = class {
+    /**
+     * Creates a new instance.
+     */
+    constructor() {
+      this._eventMap = /* @__PURE__ */ new Map();
+    }
+    /**
+     * Triggers an event with the given name and specified argument.
+     * @template {import('core').EventNames<TSurface>} TName
+     * @param {TName} eventName The string representing the event's name.
+     * @param {import('core').EventArgument<TSurface, TName>} details The argument passed to the callback functions.
+     * @returns {boolean} `true` if any callbacks were registered, `false` otherwise.
+     */
+    trigger(eventName, details) {
+      const callbacks = this._eventMap.get(eventName);
+      if (typeof callbacks === "undefined") {
+        return false;
+      }
+      for (const callback of callbacks) {
+        callback(details);
+      }
+      return true;
+    }
+    /**
+     * Adds a single event listener to a specific event.
+     * @template {import('core').EventNames<TSurface>} TName
+     * @param {TName} eventName The string representing the event's name.
+     * @param {import('core').EventHandler<TSurface, TName>} callback The event listener callback to add.
+     */
+    on(eventName, callback) {
+      let callbacks = this._eventMap.get(eventName);
+      if (typeof callbacks === "undefined") {
+        callbacks = [];
+        this._eventMap.set(eventName, callbacks);
+      }
+      callbacks.push(callback);
+    }
+    /**
+     * Removes a single event listener from a specific event.
+     * @template {import('core').EventNames<TSurface>} TName
+     * @param {TName} eventName The string representing the event's name.
+     * @param {import('core').EventHandler<TSurface, TName>} callback The event listener callback to add.
+     * @returns {boolean} `true` if the callback was removed, `false` otherwise.
+     */
+    off(eventName, callback) {
+      const callbacks = this._eventMap.get(eventName);
+      if (typeof callbacks === "undefined") {
+        return false;
+      }
+      const ii = callbacks.length;
+      for (let i = 0; i < ii; ++i) {
+        if (callbacks[i] === callback) {
+          callbacks.splice(i, 1);
+          if (callbacks.length === 0) {
+            this._eventMap.delete(eventName);
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+    /**
+     * Checks if an event has any listeners.
+     * @template {import('core').EventNames<TSurface>} TName
+     * @param {TName} eventName The string representing the event's name.
+     * @returns {boolean} `true` if the event has listeners, `false` otherwise.
+     */
+    hasListeners(eventName) {
+      const callbacks = this._eventMap.get(eventName);
+      return typeof callbacks !== "undefined" && callbacks.length > 0;
+    }
+  };
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/core/extension-error.js
+  var ExtensionError = class _ExtensionError extends Error {
+    /**
+     * @param {string} message
+     */
+    constructor(message) {
+      super(message);
+      this.name = "ExtensionError";
+      this._data = void 0;
+    }
+    /** @type {unknown} */
+    get data() {
+      return this._data;
+    }
+    set data(value) {
+      this._data = value;
+    }
+    /**
+     * Converts an `Error` object to a serializable JSON object.
+     * @param {unknown} error An error object to convert.
+     * @returns {import('core').SerializedError} A simple object which can be serialized by `JSON.stringify()`.
+     */
+    static serialize(error) {
+      try {
+        if (typeof error === "object" && error !== null) {
+          const { name, message, stack } = (
+            /** @type {import('core').SerializableObject} */
+            error
+          );
+          const result = {
+            name: typeof name === "string" ? name : "",
+            message: typeof message === "string" ? message : "",
+            stack: typeof stack === "string" ? stack : ""
+          };
+          if (error instanceof _ExtensionError) {
+            result.data = error.data;
+          }
+          return result;
+        }
+      } catch (e) {
+      }
+      return (
+        /** @type {import('core').SerializedError2} */
+        {
+          value: error,
+          hasValue: true
+        }
+      );
+    }
+    /**
+     * Converts a serialized error into a standard `Error` object.
+     * @param {import('core').SerializedError} serializedError A simple object which was initially generated by the `serialize` function.
+     * @returns {ExtensionError} A new `Error` instance.
+     */
+    static deserialize(serializedError) {
+      if (serializedError.hasValue) {
+        const { value } = serializedError;
+        return new _ExtensionError(`Error of type ${typeof value}: ${value}`);
+      }
+      const { message, name, stack, data } = serializedError;
+      const error = new _ExtensionError(message);
+      error.name = name;
+      error.stack = stack;
+      if (typeof data !== "undefined") {
+        error.data = data;
+      }
+      return error;
+    }
+  };
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/core/log.js
+  var Logger = class extends EventDispatcher {
+    constructor() {
+      super();
+      this._extensionName = "Extension";
+      this._issueUrl = "https://github.com/yomidevs/yomitan/issues";
+    }
+    /**
+     * @param {string} extensionName
+     */
+    configure(extensionName) {
+      this._extensionName = extensionName;
+    }
+    /**
+     * @param {unknown} message
+     * @param {...unknown} optionalParams
+     */
+    log(message, ...optionalParams) {
+      console.log(message, ...optionalParams);
+    }
+    /**
+     * Logs a warning.
+     * @param {unknown} error The error to log. This is typically an `Error` or `Error`-like object.
+     */
+    warn(error) {
+      this.logGenericError(error, "warn");
+    }
+    /**
+     * Logs an error.
+     * @param {unknown} error The error to log. This is typically an `Error` or `Error`-like object.
+     */
+    error(error) {
+      this.logGenericError(error, "error");
+    }
+    /**
+     * Logs a generic error.
+     * @param {unknown} error The error to log. This is typically an `Error` or `Error`-like object.
+     * @param {import('log').LogLevel} level
+     * @param {import('log').LogContext} [context]
+     */
+    logGenericError(error, level, context) {
+      if (typeof context === "undefined") {
+        context = typeof location === "undefined" ? { url: "unknown" } : { url: location.href };
+      }
+      let errorString;
+      try {
+        if (typeof error === "string") {
+          errorString = error;
+        } else {
+          errorString = typeof error === "object" && error !== null ? (
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+            error.toString()
+          ) : `${error}`;
+          if (/^\[object \w+\]$/.test(errorString)) {
+            errorString = JSON.stringify(error);
+          }
+        }
+      } catch (e) {
+        errorString = `${error}`;
+      }
+      let errorStack;
+      try {
+        errorStack = error instanceof Error ? typeof error.stack === "string" ? error.stack.trimEnd() : "" : "";
+      } catch (e) {
+        errorStack = "";
+      }
+      let errorData;
+      try {
+        if (error instanceof ExtensionError) {
+          errorData = error.data;
+        }
+      } catch (e) {
+      }
+      if (errorStack.startsWith(errorString)) {
+        errorString = errorStack;
+      } else if (errorStack.length > 0) {
+        errorString += `
+${errorStack}`;
+      }
+      let message = `${this._extensionName} has encountered a problem.`;
+      message += `
+Originating URL: ${context.url}
+`;
+      message += errorString;
+      if (typeof errorData !== "undefined") {
+        message += `
+Data: ${JSON.stringify(errorData, null, 4)}`;
+      }
+      if (this._issueUrl !== null) {
+        message += `
+
+Issues can be reported at ${this._issueUrl}`;
+      }
+      switch (level) {
+        case "log":
+          console.log(message);
+          break;
+        case "warn":
+          console.warn(message);
+          break;
+        case "error":
+          console.error(message);
+          break;
+      }
+      this.trigger("logGenericError", { error, level, context });
+    }
+  };
+  var log = new Logger();
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/dom/document-util.js
+  var cssZoomSupported = null;
+  var FIREFOX_RECT_EXCLUDED_LANGUAGES = /* @__PURE__ */ new Set(["th"]);
+  function computeZoomScale(node) {
+    if (cssZoomSupported === null) {
+      cssZoomSupported = computeCssZoomSupported();
+    }
+    if (!cssZoomSupported) {
+      return 1;
+    }
+    let scale = 1;
+    const { ELEMENT_NODE, DOCUMENT_FRAGMENT_NODE } = Node;
+    const { documentElement } = document;
+    for (; node !== null && node !== documentElement; node = node.parentNode) {
+      const { nodeType } = node;
+      if (nodeType === DOCUMENT_FRAGMENT_NODE) {
+        const { host } = (
+          /** @type {ShadowRoot} */
+          node
+        );
+        if (typeof host !== "undefined") {
+          node = host;
+        }
+        continue;
+      } else if (nodeType !== ELEMENT_NODE) {
+        continue;
+      }
+      const zoomString = getComputedStyle(
+        /** @type {HTMLElement} */
+        node
+      ).getPropertyValue("zoom");
+      if (typeof zoomString !== "string" || zoomString.length === 0) {
+        continue;
+      }
+      const zoom = Number.parseFloat(zoomString);
+      if (!Number.isFinite(zoom) || zoom === 0) {
+        continue;
+      }
+      scale *= zoom;
+    }
+    return scale;
+  }
+  function convertRectZoomCoordinates(rect, node) {
+    const scale = computeZoomScale(node);
+    return scale === 1 ? rect : new DOMRect(rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale);
+  }
+  function convertMultipleRectZoomCoordinates(rects, node) {
+    const scale = computeZoomScale(node);
+    if (scale === 1) {
+      return [...rects];
+    }
+    const results = [];
+    for (const rect of rects) {
+      results.push(new DOMRect(rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale));
+    }
+    return results;
+  }
+  function isPointInRect(x, y, rect) {
+    return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
+  }
+  function isPointInAnyRect(x, y, rects, language, browser) {
+    if (browser && browser.includes("firefox") && FIREFOX_RECT_EXCLUDED_LANGUAGES.has(language)) {
+      return true;
+    }
+    for (const rect of rects) {
+      if (isPointInRect(x, y, rect)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function getNodesInRange(range) {
+    const end = range.endContainer;
+    const nodes = [];
+    for (let node = (
+      /** @type {?Node} */
+      range.startContainer
+    ); node !== null; node = getNextNode(node)) {
+      nodes.push(node);
+      if (node === end) {
+        break;
+      }
+    }
+    return nodes;
+  }
+  function getNextNode(node) {
+    let next = (
+      /** @type {?Node} */
+      node.firstChild
+    );
+    if (next === null) {
+      while (true) {
+        next = node.nextSibling;
+        if (next !== null) {
+          break;
+        }
+        next = node.parentNode;
+        if (next === null) {
+          break;
+        }
+        node = next;
+      }
+    }
+    return next;
+  }
+  function offsetDOMRects(rects, x, y) {
+    const results = [];
+    for (const rect of rects) {
+      results.push(new DOMRect(rect.left + x, rect.top + y, rect.width, rect.height));
+    }
+    return results;
+  }
+  function getElementWritingMode(element) {
+    if (element !== null) {
+      const { writingMode } = getComputedStyle(element);
+      if (typeof writingMode === "string") {
+        return normalizeWritingMode(writingMode);
+      }
+    }
+    return "horizontal-tb";
+  }
+  function normalizeWritingMode(writingMode) {
+    switch (writingMode) {
+      case "tb":
+        return "vertical-lr";
+      case "tb-rl":
+        return "vertical-rl";
+      case "horizontal-tb":
+      case "vertical-rl":
+      case "vertical-lr":
+      case "sideways-rl":
+      case "sideways-lr":
+        return writingMode;
+      default:
+        return "horizontal-tb";
+    }
+  }
+  function computeCssZoomSupported() {
+    const { style } = document.createElement("div");
+    return typeof style === "object" && style !== null && typeof style.zoom === "string";
+  }
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/data/string-util.js
+  function readCodePointsForward(text, position, count) {
+    const textLength = text.length;
+    let result = "";
+    for (; count > 0; --count) {
+      const char = text[position];
+      result += char;
+      if (++position >= textLength) {
+        break;
+      }
+      const charCode = char.charCodeAt(0);
+      if (charCode >= 55296 && charCode < 56320) {
+        const char2 = text[position];
+        const charCode2 = char2.charCodeAt(0);
+        if (charCode2 >= 56320 && charCode2 < 57344) {
+          result += char2;
+          if (++position >= textLength) {
+            break;
+          }
+        }
+      }
+    }
+    return result;
+  }
+  function readCodePointsBackward(text, position, count) {
+    let result = "";
+    for (; count > 0; --count) {
+      const char = text[position];
+      result = char + result;
+      if (--position < 0) {
+        break;
+      }
+      const charCode = char.charCodeAt(0);
+      if (charCode >= 56320 && charCode < 57344) {
+        const char2 = text[position];
+        const charCode2 = char2.charCodeAt(0);
+        if (charCode2 >= 55296 && charCode2 < 56320) {
+          result = char2 + result;
+          if (--position < 0) {
+            break;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/dom/dom-text-scanner.js
+  var _DOMTextScanner = class _DOMTextScanner {
+    /**
+     * Creates a new instance of a DOMTextScanner.
+     * @param {Node} node The DOM Node to start at.
+     * @param {number} offset The character offset in to start at when node is a text node.
+     *   Use 0 for non-text nodes.
+     * @param {boolean} forcePreserveWhitespace Whether or not whitespace should be forced to be preserved,
+     *   regardless of CSS styling.
+     * @param {boolean} generateLayoutContent Whether or not newlines should be added based on CSS styling.
+     * @param {boolean} stopAtWordBoundary Whether to pause scanning when whitespace is encountered when scanning backwards.
+     */
+    constructor(node, offset, forcePreserveWhitespace = false, generateLayoutContent = true, stopAtWordBoundary = false) {
+      const ruby = _DOMTextScanner.getParentRubyElement(node);
+      const resetOffset = ruby !== null;
+      if (resetOffset) {
+        node = ruby;
+      }
+      this._initialNode = node;
+      this._node = node;
+      this._offset = offset;
+      this._content = "";
+      this._remainder = 0;
+      this._resetOffset = resetOffset;
+      this._newlines = 0;
+      this._lineHasWhitespace = false;
+      this._lineHasContent = false;
+      this._forcePreserveWhitespace = forcePreserveWhitespace;
+      this._generateLayoutContent = generateLayoutContent;
+      this._stopAtWordBoundary = stopAtWordBoundary;
+    }
+    /**
+     * Gets the current node being scanned.
+     * @type {Node}
+     */
+    get node() {
+      return this._node;
+    }
+    /**
+     * Gets the current offset corresponding to the node being scanned.
+     * This value is only applicable for text nodes.
+     * @type {number}
+     */
+    get offset() {
+      return this._offset;
+    }
+    /**
+     * Gets the remaining number of characters that weren't scanned in the last seek() call.
+     * This value is usually 0 unless the end of the document was reached.
+     * @type {number}
+     */
+    get remainder() {
+      return this._remainder;
+    }
+    /**
+     * Gets the accumulated content string resulting from calls to seek().
+     * @type {string}
+     */
+    get content() {
+      return this._content;
+    }
+    /**
+     * Seeks a given length in the document and accumulates the text content.
+     * @param {number} length A positive or negative integer corresponding to how many characters
+     *   should be added to content. Content is only added to the accumulation string,
+     *   never removed, so mixing seek calls with differently signed length values
+     *   may give unexpected results.
+     * @returns {DOMTextScanner} this
+     */
+    seek(length) {
+      const forward = length >= 0;
+      this._remainder = forward ? length : -length;
+      if (length === 0) {
+        return this;
+      }
+      const TEXT_NODE = Node.TEXT_NODE;
+      const ELEMENT_NODE = Node.ELEMENT_NODE;
+      const generateLayoutContent = this._generateLayoutContent;
+      let node = (
+        /** @type {?Node} */
+        this._node
+      );
+      let lastNode = (
+        /** @type {Node} */
+        node
+      );
+      let resetOffset = this._resetOffset;
+      let newlines = 0;
+      seekLoop:
+        while (node !== null) {
+          let enterable = false;
+          const nodeType = node.nodeType;
+          if (nodeType === TEXT_NODE) {
+            lastNode = node;
+            const shouldContinueScanning = forward ? this._seekTextNodeForward(
+              /** @type {Text} */
+              node,
+              resetOffset
+            ) : this._seekTextNodeBackward(
+              /** @type {Text} */
+              node,
+              resetOffset
+            );
+            if (!shouldContinueScanning) {
+              break;
+            }
+          } else if (nodeType === ELEMENT_NODE) {
+            if (this._stopAtWordBoundary && !forward) {
+              break;
+            }
+            lastNode = node;
+            const initialNodeAtBeginningOfNodeGoingBackwards = node === this._initialNode && this._offset === 0 && !forward;
+            const initialNodeAtEndOfNodeGoingForwards = node === this._initialNode && this._offset === node.childNodes.length && forward;
+            this._offset = 0;
+            const isInitialNode = node === this._initialNode;
+            ({ enterable, newlines } = _DOMTextScanner.getElementSeekInfo(
+              /** @type {Element} */
+              node
+            ));
+            if (!isInitialNode && newlines > this._newlines && generateLayoutContent) {
+              this._newlines = newlines;
+            }
+            if (initialNodeAtBeginningOfNodeGoingBackwards || initialNodeAtEndOfNodeGoingForwards) {
+              enterable = false;
+            }
+          }
+          const exitedNodes = [];
+          node = _DOMTextScanner.getNextNodeToProcess(node, forward, enterable, exitedNodes);
+          for (const exitedNode of exitedNodes) {
+            if (exitedNode.nodeType !== ELEMENT_NODE) {
+              continue;
+            }
+            ({ newlines } = _DOMTextScanner.getElementSeekInfo(
+              /** @type {Element} */
+              exitedNode
+            ));
+            if (newlines > this._newlines && generateLayoutContent) {
+              this._newlines = newlines;
+            }
+            if (newlines > 0 && this._stopAtWordBoundary && !forward) {
+              break seekLoop;
+            }
+          }
+          resetOffset = true;
+        }
+      this._node = lastNode;
+      this._resetOffset = resetOffset;
+      return this;
+    }
+    // Private
+    /**
+     * Seeks forward in a text node.
+     * @param {Text} textNode The text node to use.
+     * @param {boolean} resetOffset Whether or not the text offset should be reset.
+     * @returns {boolean} `true` if scanning should continue, or `false` if the scan length has been reached.
+     */
+    _seekTextNodeForward(textNode, resetOffset) {
+      const nodeValue = (
+        /** @type {string} */
+        textNode.nodeValue
+      );
+      const nodeValueLength = nodeValue.length;
+      const { preserveNewlines, preserveWhitespace } = this._getWhitespaceSettings(textNode);
+      if (resetOffset) {
+        this._offset = 0;
+      }
+      while (this._offset < nodeValueLength) {
+        const char = readCodePointsForward(nodeValue, this._offset, 1);
+        this._offset += char.length;
+        const charAttributes = _DOMTextScanner.getCharacterAttributes(char, preserveNewlines, preserveWhitespace);
+        if (this._checkCharacterForward(char, charAttributes)) {
+          break;
+        }
+      }
+      return this._remainder > 0;
+    }
+    /**
+     * Seeks backward in a text node.
+     * This function is nearly the same as _seekTextNodeForward, with the following differences:
+     * - Iteration condition is reversed to check if offset is greater than 0.
+     * - offset is reset to nodeValueLength instead of 0.
+     * - offset is decremented instead of incremented.
+     * - offset is decremented before getting the character.
+     * - offset is reverted by incrementing instead of decrementing.
+     * - content string is prepended instead of appended.
+     * @param {Text} textNode The text node to use.
+     * @param {boolean} resetOffset Whether or not the text offset should be reset.
+     * @returns {boolean} `true` if scanning should continue, or `false` if the scan length has been reached.
+     */
+    _seekTextNodeBackward(textNode, resetOffset) {
+      const nodeValue = (
+        /** @type {string} */
+        textNode.nodeValue
+      );
+      const nodeValueLength = nodeValue.length;
+      const { preserveNewlines, preserveWhitespace } = this._getWhitespaceSettings(textNode);
+      if (resetOffset) {
+        this._offset = nodeValueLength;
+      }
+      while (this._offset > 0) {
+        const char = readCodePointsBackward(nodeValue, this._offset - 1, 1);
+        if (this._stopAtWordBoundary && _DOMTextScanner.isWordDelimiter(char)) {
+          if (_DOMTextScanner.isSingleQuote(char) && this._offset > 1) {
+            const prevChar = readCodePointsBackward(nodeValue, this._offset - 2, 1);
+            if (_DOMTextScanner.isWordDelimiter(prevChar)) {
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
+        this._offset -= char.length;
+        const charAttributes = _DOMTextScanner.getCharacterAttributes(char, preserveNewlines, preserveWhitespace);
+        if (this._checkCharacterBackward(char, charAttributes)) {
+          break;
+        }
+      }
+      return this._remainder > 0;
+    }
+    /**
+     * Gets information about how whitespace characters are treated.
+     * @param {Text} textNode
+     * @returns {import('dom-text-scanner').WhitespaceSettings}
+     */
+    _getWhitespaceSettings(textNode) {
+      if (this._forcePreserveWhitespace) {
+        return { preserveNewlines: true, preserveWhitespace: true };
+      }
+      const element = _DOMTextScanner.getParentElement(textNode);
+      if (element !== null) {
+        const style = window.getComputedStyle(element);
+        switch (style.whiteSpace) {
+          case "pre":
+          case "pre-wrap":
+          case "break-spaces":
+            return { preserveNewlines: true, preserveWhitespace: true };
+          case "pre-line":
+            return { preserveNewlines: true, preserveWhitespace: false };
+        }
+      }
+      return { preserveNewlines: false, preserveWhitespace: false };
+    }
+    /**
+     * @param {string} char
+     * @param {import('dom-text-scanner').CharacterAttributes} charAttributes
+     * @returns {boolean} Whether or not to stop scanning.
+     */
+    _checkCharacterForward(char, charAttributes) {
+      switch (charAttributes) {
+        // case 0: break; // NOP
+        case 1:
+          this._lineHasWhitespace = true;
+          break;
+        case 2:
+        case 3:
+          if (this._newlines > 0) {
+            const useNewlineCount = Math.min(this._remainder, this._newlines);
+            this._content += "\n".repeat(useNewlineCount);
+            this._remainder -= useNewlineCount;
+            this._newlines -= useNewlineCount;
+            this._lineHasContent = false;
+            this._lineHasWhitespace = false;
+            if (this._remainder <= 0) {
+              this._offset -= char.length;
+              return true;
+            }
+          }
+          this._lineHasContent = charAttributes === 2;
+          if (this._lineHasWhitespace) {
+            if (this._lineHasContent) {
+              this._content += " ";
+              this._lineHasWhitespace = false;
+              if (--this._remainder <= 0) {
+                this._offset -= char.length;
+                return true;
+              }
+            } else {
+              this._lineHasWhitespace = false;
+            }
+          }
+          this._content += char;
+          if (--this._remainder <= 0) {
+            return true;
+          }
+          break;
+      }
+      return false;
+    }
+    /**
+     * @param {string} char
+     * @param {import('dom-text-scanner').CharacterAttributes} charAttributes
+     * @returns {boolean} Whether or not to stop scanning.
+     */
+    _checkCharacterBackward(char, charAttributes) {
+      switch (charAttributes) {
+        // case 0: break; // NOP
+        case 1:
+          this._lineHasWhitespace = true;
+          break;
+        case 2:
+        case 3:
+          if (this._newlines > 0) {
+            const useNewlineCount = Math.min(this._remainder, this._newlines);
+            this._content = "\n".repeat(useNewlineCount) + this._content;
+            this._remainder -= useNewlineCount;
+            this._newlines -= useNewlineCount;
+            this._lineHasContent = false;
+            this._lineHasWhitespace = false;
+            if (this._remainder <= 0) {
+              this._offset += char.length;
+              return true;
+            }
+          }
+          this._lineHasContent = charAttributes === 2;
+          if (this._lineHasWhitespace) {
+            if (this._lineHasContent) {
+              this._content = " " + this._content;
+              this._lineHasWhitespace = false;
+              if (--this._remainder <= 0) {
+                this._offset += char.length;
+                return true;
+              }
+            } else {
+              this._lineHasWhitespace = false;
+            }
+          }
+          this._content = char + this._content;
+          if (--this._remainder <= 0) {
+            return true;
+          }
+          break;
+      }
+      return false;
+    }
+    // Static helpers
+    /**
+     * Gets the next node to process in the document for a specified scanning direction.
+     * @param {Node} node The current DOM Node.
+     * @param {boolean} forward Whether to scan forward in the document or backward.
+     * @param {boolean} visitChildren Whether the children of the current node should be visited.
+     * @param {Node[]} exitedNodes An array which stores nodes which were exited.
+     * @returns {?Node} The next node in the document, or `null` if there is no next node.
+     */
+    static getNextNodeToProcess(node, forward, visitChildren, exitedNodes) {
+      let next = visitChildren ? forward ? node.firstChild : node.lastChild : null;
+      if (next === null) {
+        while (true) {
+          exitedNodes.push(node);
+          next = forward ? node.nextSibling : node.previousSibling;
+          if (next !== null) {
+            break;
+          }
+          next = node.parentNode;
+          if (next === null) {
+            break;
+          }
+          node = next;
+        }
+      }
+      return next;
+    }
+    /**
+     * Gets the parent element of a given Node.
+     * @param {?Node} node The node to check.
+     * @returns {?Element} The parent element if one exists, otherwise `null`.
+     */
+    static getParentElement(node) {
+      while (node !== null) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return (
+            /** @type {Element} */
+            node
+          );
+        }
+        node = node.parentNode;
+      }
+      return null;
+    }
+    /**
+     * Gets the parent <ruby> element of a given node, if one exists. For efficiency purposes,
+     * this only checks the immediate parent elements and does not check all ancestors, so
+     * there are cases where the node may be in a ruby element but it is not returned.
+     * @param {Node} node The node to check.
+     * @returns {?HTMLElement} A <ruby> node if the input node is contained in one, otherwise `null`.
+     */
+    static getParentRubyElement(node) {
+      let node2 = _DOMTextScanner.getParentElement(node);
+      if (node2 !== null && node2.nodeName.toUpperCase() === "RT") {
+        node2 = node2.parentNode;
+        if (node2 !== null && node2.nodeName.toUpperCase() === "RUBY") {
+          return (
+            /** @type {HTMLElement} */
+            node2
+          );
+        }
+      }
+      return null;
+    }
+    /**
+     * @param {Element} element
+     * @returns {import('dom-text-scanner').ElementSeekInfo}
+     */
+    static getElementSeekInfo(element) {
+      let enterable = true;
+      switch (element.nodeName.toUpperCase()) {
+        case "HEAD":
+        case "RT":
+        case "SCRIPT":
+        case "STYLE":
+          return { enterable: false, newlines: 0 };
+        case "RB":
+          return { enterable: true, newlines: 0 };
+        case "BR":
+          return { enterable: false, newlines: 1 };
+        case "TEXTAREA":
+        case "INPUT":
+        case "BUTTON":
+          enterable = false;
+          break;
+      }
+      const style = window.getComputedStyle(element);
+      const display = style.display;
+      const visible = display !== "none" && _DOMTextScanner.isStyleVisible(style);
+      let newlines = 0;
+      if (!visible) {
+        enterable = false;
+      } else {
+        switch (style.position) {
+          case "absolute":
+          case "fixed":
+          case "sticky":
+            newlines = 2;
+            break;
+        }
+        if (newlines === 0 && _DOMTextScanner.doesCSSDisplayChangeLayout(display)) {
+          newlines = 1;
+        }
+      }
+      return { enterable, newlines };
+    }
+    /**
+     * Gets attributes for the specified character.
+     * @param {string} character A string containing a single character.
+     * @param {boolean} preserveNewlines Whether or not newlines should be preserved.
+     * @param {boolean} preserveWhitespace Whether or not whitespace should be preserved.
+     * @returns {import('dom-text-scanner').CharacterAttributes} An enum representing the attributes of the character.
+     */
+    static getCharacterAttributes(character, preserveNewlines, preserveWhitespace) {
+      switch (character.charCodeAt(0)) {
+        case 9:
+        // Tab ('\t')
+        case 12:
+        // Form feed ('\f')
+        case 13:
+        // Carriage return ('\r')
+        case 32:
+          return preserveWhitespace ? 2 : 1;
+        case 10:
+          return preserveNewlines ? 3 : 1;
+        case 8203:
+        // Zero-width space
+        case 8204:
+        // Zero-width non-joiner
+        case 173:
+          return 0;
+        default:
+          return 2;
+      }
+    }
+    /**
+     * @param {string} character
+     * @returns {boolean}
+     */
+    static isWordDelimiter(character) {
+      return _DOMTextScanner.WORD_DELIMITER_REGEX.test(character);
+    }
+    /**
+     * @param {string} character
+     * @returns {boolean}
+     */
+    static isSingleQuote(character) {
+      switch (character.charCodeAt(0)) {
+        case 39:
+        // Single quote ('')
+        case 8217:
+        // Right single quote (’)
+        case 8242:
+        // Prime (′)
+        case 8245:
+        // Reversed prime (‵)
+        case 700:
+          return true;
+        default:
+          return false;
+      }
+    }
+    /**
+     * Checks whether a given style is visible or not.
+     * This function does not check `style.display === 'none'`.
+     * @param {CSSStyleDeclaration} style An object implementing the CSSStyleDeclaration interface.
+     * @returns {boolean} `true` if the style should result in an element being visible, otherwise `false`.
+     */
+    static isStyleVisible(style) {
+      return !(style.visibility === "hidden" || Number.parseFloat(style.opacity) <= 0 || Number.parseFloat(style.fontSize) <= 0 || !_DOMTextScanner.isStyleSelectable(style) && (_DOMTextScanner.isCSSColorTransparent(style.color) || _DOMTextScanner.isCSSColorTransparent(style.webkitTextFillColor)));
+    }
+    /**
+     * Checks whether a given style is selectable or not.
+     * @param {CSSStyleDeclaration} style An object implementing the CSSStyleDeclaration interface.
+     * @returns {boolean} `true` if the style is selectable, otherwise `false`.
+     */
+    static isStyleSelectable(style) {
+      return !(style.userSelect === "none" || style.webkitUserSelect === "none" || // @ts-expect-error - vendor prefix
+      style.MozUserSelect === "none" || // @ts-expect-error - vendor prefix
+      style.msUserSelect === "none");
+    }
+    /**
+     * Checks whether a CSS color is transparent or not.
+     * @param {string} cssColor A CSS color string, expected to be encoded in rgb(a) form.
+     * @returns {boolean} `true` if the color is transparent, otherwise `false`.
+     */
+    static isCSSColorTransparent(cssColor) {
+      return typeof cssColor === "string" && cssColor.startsWith("rgba(") && /,\s*0.?0*\)$/.test(cssColor);
+    }
+    /**
+     * Checks whether a CSS display value will cause a layout change for text.
+     * @param {string} cssDisplay A CSS string corresponding to the value of the display property.
+     * @returns {boolean} `true` if the layout is changed by this value, otherwise `false`.
+     */
+    static doesCSSDisplayChangeLayout(cssDisplay) {
+      let pos = cssDisplay.indexOf(" ");
+      if (pos >= 0) {
+        cssDisplay = cssDisplay.substring(0, pos);
+      }
+      pos = cssDisplay.indexOf("-");
+      if (pos >= 0) {
+        cssDisplay = cssDisplay.substring(0, pos);
+      }
+      switch (cssDisplay) {
+        case "block":
+        case "flex":
+        case "grid":
+        case "list":
+        // Also includes: list-item
+        case "table":
+          return true;
+        case "ruby":
+          return pos >= 0;
+        default:
+          return false;
+      }
+    }
+  };
+  /**
+   * A regular expression used to match word delimiters.
+   * \p{L} matches any kind of letter from any language
+   * \p{N} matches any kind of numeric character in any script
+   * @type {RegExp}
+   */
+  __publicField(_DOMTextScanner, "WORD_DELIMITER_REGEX", /[^\w\p{L}\p{N}]/u);
+  var DOMTextScanner = _DOMTextScanner;
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/dom/text-source-element.js
+  var TextSourceElement = class _TextSourceElement {
+    /**
+     * Creates a new instance of the class.
+     * @param {Element} element The source element.
+     * @param {string} fullContent The string representing the element's full text value.
+     * @param {number} startOffset The text start offset position within the full content.
+     * @param {number} endOffset The text end offset position within the full content.
+     */
+    constructor(element, fullContent, startOffset, endOffset) {
+      this._element = element;
+      this._fullContent = fullContent;
+      this._startOffset = startOffset;
+      this._endOffset = endOffset;
+      this._content = this._fullContent.substring(this._startOffset, this._endOffset);
+    }
+    /**
+     * Gets the type name of this instance.
+     * @type {'element'}
+     */
+    get type() {
+      return "element";
+    }
+    /**
+     * The source element.
+     * @type {Element}
+     */
+    get element() {
+      return this._element;
+    }
+    /**
+     * The string representing the element's full text value.
+     * @type {string}
+     */
+    get fullContent() {
+      return this._fullContent;
+    }
+    /**
+     * The string representing the element's constrained text value.
+     * @type {string}
+     */
+    get content() {
+      return this._content;
+    }
+    /**
+     * The text start offset position within the full content.
+     * @type {number}
+     */
+    get startOffset() {
+      return this._startOffset;
+    }
+    /**
+     * The text end offset position within the full content.
+     * @type {number}
+     */
+    get endOffset() {
+      return this._endOffset;
+    }
+    /**
+     * Creates a clone of the instance.
+     * @returns {TextSourceElement} The new clone.
+     */
+    clone() {
+      return new _TextSourceElement(this._element, this._fullContent, this._startOffset, this._endOffset);
+    }
+    /**
+     * Performs any cleanup that is necessary after the element has been used.
+     */
+    cleanup() {
+    }
+    /**
+     * Gets the selected text of element, which is a substring of the full content
+     * starting at `startOffset` and ending at `endOffset`.
+     * @returns {string} The text content.
+     */
+    text() {
+      return this._content;
+    }
+    /**
+     * Moves the end offset of the text by a set amount of unicode codepoints.
+     * @param {number} length The maximum number of codepoints to move by.
+     * @param {boolean} fromEnd Whether to move the offset from the current end position (if `true`) or the start position (if `false`).
+     * @returns {number} The actual number of characters (not codepoints) that were read.
+     */
+    setEndOffset(length, fromEnd) {
+      const offset = fromEnd ? this._endOffset : this._startOffset;
+      length = Math.min(this._fullContent.length - offset, length);
+      if (length > 0) {
+        length = readCodePointsForward(this._fullContent, offset, length).length;
+      }
+      this._endOffset = offset + length;
+      this._content = this._fullContent.substring(this._startOffset, this._endOffset);
+      return length;
+    }
+    /**
+     * Moves the start offset of the text by a set amount of unicode codepoints.
+     * @param {number} length The maximum number of codepoints to move by.
+     * @returns {number} The actual number of characters (not codepoints) that were read.
+     */
+    setStartOffset(length) {
+      length = Math.min(this._startOffset, length);
+      if (length > 0) {
+        length = readCodePointsBackward(this._fullContent, this._startOffset - 1, length).length;
+      }
+      this._startOffset -= length;
+      this._content = this._fullContent.substring(this._startOffset, this._endOffset);
+      return length;
+    }
+    /**
+     * Gets the rects that represent the position and bounds of the text source.
+     * @returns {DOMRect[]} The rects.
+     */
+    getRects() {
+      return convertMultipleRectZoomCoordinates(this._element.getClientRects(), this._element);
+    }
+    /**
+     * Gets writing mode that is used for this element.
+     * See: https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode.
+     * @returns {import('document-util').NormalizedWritingMode} The writing mode.
+     */
+    getWritingMode() {
+      return "horizontal-tb";
+    }
+    /**
+     * Selects the text source in the document.
+     */
+    select() {
+    }
+    /**
+     * Deselects the text source in the document.
+     */
+    deselect() {
+    }
+    /**
+     * Checks whether another text source has the same starting point.
+     * @param {import('text-source').TextSource} other The other source to test.
+     * @returns {boolean} `true` if the starting points are equivalent, `false` otherwise.
+     */
+    hasSameStart(other) {
+      return typeof other === "object" && other !== null && other instanceof _TextSourceElement && this._element === other.element && this._fullContent === other.fullContent && this._startOffset === other.startOffset;
+    }
+    /**
+     * Gets a list of the nodes in this text source's range.
+     * @returns {Node[]} The nodes in the range.
+     */
+    getNodesInRange() {
+      return [this._element];
+    }
+    /**
+     * Creates a new instance for a given element.
+     * @param {Element} element The source element.
+     * @returns {TextSourceElement} A new instance of the class corresponding to the element.
+     */
+    static create(element) {
+      return new _TextSourceElement(element, this._getElementContent(element), 0, 0);
+    }
+    /**
+     * Gets the full content string for a given element.
+     * @param {Element} element The element to get the full content of.
+     * @returns {string} The content string.
+     */
+    static _getElementContent(element) {
+      let content = "";
+      switch (element.nodeName.toUpperCase()) {
+        case "BUTTON":
+          {
+            const { textContent } = (
+              /** @type {HTMLButtonElement} */
+              element
+            );
+            if (textContent !== null) {
+              content = textContent;
+            }
+          }
+          break;
+        case "IMG":
+          {
+            const alt = (
+              /** @type {HTMLImageElement} */
+              element.getAttribute("alt")
+            );
+            if (typeof alt === "string") {
+              content = alt;
+            }
+          }
+          break;
+        case "SELECT":
+          {
+            const { selectedIndex, options } = (
+              /** @type {HTMLSelectElement} */
+              element
+            );
+            if (selectedIndex >= 0 && selectedIndex < options.length) {
+              const { textContent } = options[selectedIndex];
+              if (textContent !== null) {
+                content = textContent;
+              }
+            }
+          }
+          break;
+        case "INPUT":
+          {
+            content = /** @type {HTMLInputElement} */
+            element.value;
+          }
+          break;
+      }
+      content = content.replace(/[\u200b\u200c\u00ad]/g, "");
+      return content;
+    }
+  };
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/core/to-error.js
+  function toError(value) {
+    return value instanceof Error ? value : new Error(`${value}`);
+  }
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/dom/text-source-range.js
+  var TextSourceRange = class _TextSourceRange {
+    /**
+     * Creates a new instance of the class.
+     * @param {Range} range The selection range.
+     * @param {number} rangeStartOffset The `startOffset` of the range. This is somewhat redundant
+     *   with the `range` parameter, but it is used when for when imposter elements are removed.
+     * @param {string} content The `toString()` value of the range. This is somewhat redundant
+     *   with the `range` parameter, but it is used when for when imposter elements are removed.
+     * @param {?Element} imposterElement The temporary imposter element.
+     * @param {?Element} imposterSourceElement The source element which the imposter is imitating.
+     *   Must not be `null` if imposterElement is specified.
+     * @param {?DOMRect[]} cachedRects A set of cached `DOMRect`s representing the rects of the text source,
+     *   which can be used after the imposter element is removed from the page.
+     *   Must not be `null` if imposterElement is specified.
+     * @param {?DOMRect} cachedSourceRect A cached `DOMRect` representing the rect of the `imposterSourceElement`,
+     *   which can be used after the imposter element is removed from the page.
+     *   Must not be `null` if imposterElement is specified.
+     * @param {boolean} disallowExpandSelection
+     */
+    constructor(range, rangeStartOffset, content, imposterElement, imposterSourceElement, cachedRects, cachedSourceRect, disallowExpandSelection) {
+      this._range = range;
+      this._rangeStartOffset = rangeStartOffset;
+      this._content = content;
+      this._imposterElement = imposterElement;
+      this._imposterSourceElement = imposterSourceElement;
+      this._cachedRects = cachedRects;
+      this._cachedSourceRect = cachedSourceRect;
+      this._disallowExpandSelection = disallowExpandSelection;
+    }
+    /**
+     * Gets the type name of this instance.
+     * @type {'range'}
+     */
+    get type() {
+      return "range";
+    }
+    /**
+     * The internal range object.
+     * @type {Range}
+     */
+    get range() {
+      return this._range;
+    }
+    /**
+     * The starting offset for the range.
+     * @type {number}
+     */
+    get rangeStartOffset() {
+      return this._rangeStartOffset;
+    }
+    /**
+     * The source element that the imposter element is imitating, if present.
+     * @type {?Element}
+     */
+    get imposterSourceElement() {
+      return this._imposterSourceElement;
+    }
+    /**
+     * Creates a clone of the instance.
+     * @returns {TextSourceRange} The new clone.
+     */
+    clone() {
+      return new _TextSourceRange(
+        this._range.cloneRange(),
+        this._rangeStartOffset,
+        this._content,
+        this._imposterElement,
+        this._imposterSourceElement,
+        this._cachedRects,
+        this._cachedSourceRect,
+        this._disallowExpandSelection
+      );
+    }
+    /**
+     * Performs any cleanup that is necessary after the element has been used.
+     */
+    cleanup() {
+      if (this._imposterElement !== null && this._imposterElement.parentNode !== null) {
+        this._imposterElement.parentNode.removeChild(this._imposterElement);
+      }
+    }
+    /**
+     * Gets the selected text of element, which is the `toString()` version of the range.
+     * @returns {string} The text content.
+     */
+    text() {
+      return this._content;
+    }
+    /**
+     * Moves the end offset of the text by a set amount of unicode codepoints.
+     * @param {number} length The maximum number of codepoints to move by.
+     * @param {boolean} fromEnd Whether to move the offset from the current end position (if `true`) or the start position (if `false`).
+     * @param {boolean} layoutAwareScan Whether or not HTML layout information should be used to generate
+     *   the string content when scanning.
+     * @returns {number} The actual number of codepoints that were read.
+     */
+    setEndOffset(length, fromEnd, layoutAwareScan) {
+      if (this._disallowExpandSelection) {
+        return 0;
+      }
+      let node;
+      let offset;
+      if (fromEnd) {
+        node = this._range.endContainer;
+        offset = this._range.endOffset;
+      } else {
+        node = this._range.startContainer;
+        offset = this._range.startOffset;
+      }
+      const state = new DOMTextScanner(node, offset, !layoutAwareScan, layoutAwareScan).seek(length);
+      this._range.setEnd(state.node, state.offset);
+      const expandedContent = fromEnd ? this._content + state.content : state.content;
+      this._content = expandedContent;
+      return length - state.remainder;
+    }
+    /**
+     * Moves the start offset of the text backwards by a set amount of unicode codepoints.
+     * @param {number} length The maximum number of codepoints to move by.
+     * @param {boolean} layoutAwareScan Whether or not HTML layout information should be used to generate
+     *   the string content when scanning.
+     * @param {boolean} stopAtWordBoundary Whether to stop at whitespace characters.
+     * @returns {number} The actual number of codepoints that were read.
+     */
+    setStartOffset(length, layoutAwareScan, stopAtWordBoundary = false) {
+      if (this._disallowExpandSelection) {
+        return 0;
+      }
+      let state = new DOMTextScanner(this._range.startContainer, this._range.startOffset, !layoutAwareScan, layoutAwareScan, stopAtWordBoundary);
+      state = state.seek(-length);
+      this._range.setStart(state.node, state.offset);
+      this._rangeStartOffset = this._range.startOffset;
+      this._content = state.content + this._content;
+      return length - state.remainder;
+    }
+    /**
+     * Gets the rects that represent the position and bounds of the text source.
+     * @returns {DOMRect[]} The rects.
+     */
+    getRects() {
+      if (this._isImposterDisconnected()) {
+        return this._getCachedRects();
+      }
+      return convertMultipleRectZoomCoordinates(this._range.getClientRects(), this._range.startContainer);
+    }
+    /**
+     * Gets writing mode that is used for this element.
+     * See: https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode.
+     * @returns {import('document-util').NormalizedWritingMode} The writing mode.
+     */
+    getWritingMode() {
+      let node = this._isImposterDisconnected() ? this._imposterSourceElement : this._range.startContainer;
+      if (node !== null && node.nodeType !== Node.ELEMENT_NODE) {
+        node = node.parentElement;
+      }
+      return getElementWritingMode(
+        /** @type {?Element} */
+        node
+      );
+    }
+    /**
+     * Selects the text source in the document.
+     */
+    select() {
+      if (this._imposterElement !== null) {
+        return;
+      }
+      const selection = window.getSelection();
+      if (selection === null) {
+        return;
+      }
+      selection.removeAllRanges();
+      selection.addRange(this._range);
+    }
+    /**
+     * Deselects the text source in the document.
+     */
+    deselect() {
+      if (this._imposterElement !== null) {
+        return;
+      }
+      const selection = window.getSelection();
+      if (selection === null) {
+        return;
+      }
+      selection.removeAllRanges();
+    }
+    /**
+     * Checks whether another text source has the same starting point.
+     * @param {import('text-source').TextSource} other The other source to test.
+     * @returns {boolean} `true` if the starting points are equivalent, `false` otherwise.
+     * @throws {Error} An exception can be thrown if `Range.compareBoundaryPoints` fails,
+     *   which shouldn't happen, but the handler is kept in case of unexpected errors.
+     */
+    hasSameStart(other) {
+      if (!(typeof other === "object" && other !== null && other instanceof _TextSourceRange)) {
+        return false;
+      }
+      if (this._imposterSourceElement !== null) {
+        return this._imposterSourceElement === other.imposterSourceElement && this._rangeStartOffset === other.rangeStartOffset;
+      } else {
+        try {
+          return this._range.compareBoundaryPoints(Range.START_TO_START, other.range) === 0;
+        } catch (e) {
+          if (toError(e).name === "WrongDocumentError") {
+            return false;
+          }
+          throw e;
+        }
+      }
+    }
+    /**
+     * Gets a list of the nodes in this text source's range.
+     * @returns {Node[]} The nodes in the range.
+     */
+    getNodesInRange() {
+      return getNodesInRange(this._range);
+    }
+    /**
+     * Creates a new instance for a given range.
+     * @param {Range} range The source range.
+     * @returns {TextSourceRange} A new instance of the class corresponding to the range.
+     */
+    static create(range) {
+      return new _TextSourceRange(range, range.startOffset, range.toString(), null, null, null, null, false);
+    }
+    /**
+     * Creates a new instance for a given range without expanding the search.
+     * @param {Range} range The source range.
+     * @returns {TextSourceRange} A new instance of the class corresponding to the range.
+     */
+    static createLazy(range) {
+      return new _TextSourceRange(range, range.startOffset, range.toString(), null, null, null, null, true);
+    }
+    /**
+     * Creates a new instance for a given range using an imposter element.
+     * @param {Range} range The source range.
+     * @param {Element} imposterElement The temporary imposter element.
+     * @param {Element} imposterSourceElement The source element which the imposter is imitating.
+     * @returns {TextSourceRange} A new instance of the class corresponding to the range.
+     */
+    static createFromImposter(range, imposterElement, imposterSourceElement) {
+      const cachedRects = convertMultipleRectZoomCoordinates(range.getClientRects(), range.startContainer);
+      const cachedSourceRect = convertRectZoomCoordinates(imposterSourceElement.getBoundingClientRect(), imposterSourceElement);
+      return new _TextSourceRange(range, range.startOffset, range.toString(), imposterElement, imposterSourceElement, cachedRects, cachedSourceRect, false);
+    }
+    /**
+     * Checks whether the imposter element has been removed, if the instance is using one.
+     * @returns {boolean} `true` if the instance has an imposter and it's no longer connected to the document, `false` otherwise.
+     */
+    _isImposterDisconnected() {
+      return this._imposterElement !== null && !this._imposterElement.isConnected;
+    }
+    /**
+     * Gets the cached rects for a disconnected imposter element.
+     * @returns {DOMRect[]} The rects for the element.
+     * @throws {Error}
+     */
+    _getCachedRects() {
+      if (this._cachedRects === null || this._cachedSourceRect === null || this._imposterSourceElement === null) {
+        throw new Error("Cached rects not valid for this instance");
+      }
+      const sourceRect = convertRectZoomCoordinates(this._imposterSourceElement.getBoundingClientRect(), this._imposterSourceElement);
+      return offsetDOMRects(
+        this._cachedRects,
+        sourceRect.left - this._cachedSourceRect.left,
+        sourceRect.top - this._cachedSourceRect.top
+      );
+    }
+  };
+
+  // ../../../../../tmp/yomitan-26.5.19.0/yomitan-26.5.19.0/ext/js/dom/text-source-generator.js
+  var TextSourceGenerator = class {
+    constructor() {
+      this._transparentColorPattern = /rgba\s*\([^)]*,\s*0(?:\.0+)?\s*\)/;
+      this._getRangeFromPointHandlers = [];
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {import('document-util').GetRangeFromPointOptions} options
+     * @returns {?import('text-source').TextSource}
+     */
+    getRangeFromPoint(x, y, options) {
+      for (const handler of this._getRangeFromPointHandlers) {
+        const result = handler(x, y, options);
+        if (result !== null) {
+          return result;
+        }
+      }
+      return this._getRangeFromPointInternal(x, y, options);
+    }
+    /**
+     * Registers a custom handler for scanning for text or elements at the input position.
+     * @param {import('text-source-generator').GetRangeFromPointHandler} handler The handler callback which will be invoked when calling `getRangeFromPoint`.
+     */
+    registerGetRangeFromPointHandler(handler) {
+      this._getRangeFromPointHandlers.push(handler);
+    }
+    /**
+     * Extract a sentence from a document.
+     * @param {import('text-source').TextSource} source The text source object, either `TextSourceRange` or `TextSourceElement`.
+     * @param {boolean} layoutAwareScan Whether or not layout-aware scan mode should be used.
+     * @param {number} extent The length of the sentence to extract.
+     * @param {boolean} terminateAtNewlines Whether or not a sentence should be terminated at newline characters.
+     * @param {import('text-scanner').SentenceTerminatorMap} terminatorMap A mapping of characters that terminate a sentence.
+     * @param {import('text-scanner').SentenceForwardQuoteMap} forwardQuoteMap A mapping of quote characters that delimit a sentence.
+     * @param {import('text-scanner').SentenceBackwardQuoteMap} backwardQuoteMap A mapping of quote characters that delimit a sentence, which is the inverse of forwardQuoteMap.
+     * @returns {{text: string, offset: number}} The sentence and the offset to the original source.
+     */
+    extractSentence(source, layoutAwareScan, extent, terminateAtNewlines, terminatorMap, forwardQuoteMap, backwardQuoteMap) {
+      source = source.clone();
+      const startLength = source.setStartOffset(extent, layoutAwareScan);
+      const endLength = source.setEndOffset(extent * 2 - startLength, true, layoutAwareScan);
+      const text = [...source.text()];
+      const textLength = text.length;
+      const textEndAnchor = textLength - endLength;
+      let cursorStart = startLength;
+      let cursorEnd = textEndAnchor;
+      let quoteStack = [];
+      for (; cursorStart > 0; --cursorStart) {
+        let c = text[cursorStart - 1];
+        if (c === "\n" && terminateAtNewlines) {
+          break;
+        }
+        if (quoteStack.length === 0) {
+          let terminatorInfo = terminatorMap.get(c);
+          if (typeof terminatorInfo !== "undefined") {
+            while (terminatorInfo[0] && cursorStart > 0) {
+              --cursorStart;
+              if (cursorStart === 0) {
+                break;
+              }
+              c = text[cursorStart - 1];
+              terminatorInfo = terminatorMap.get(c);
+              if (typeof terminatorInfo === "undefined") {
+                break;
+              }
+            }
+            break;
+          }
+        }
+        let quoteInfo = forwardQuoteMap.get(c);
+        if (typeof quoteInfo !== "undefined") {
+          if (quoteStack.length === 0) {
+            while (quoteInfo[1] && cursorStart > 0) {
+              --cursorStart;
+              if (cursorStart === 0) {
+                break;
+              }
+              c = text[cursorStart - 1];
+              quoteInfo = forwardQuoteMap.get(c);
+              if (typeof quoteInfo === "undefined") {
+                break;
+              }
+            }
+            break;
+          } else if (quoteStack[0] === c) {
+            quoteStack.pop();
+            continue;
+          }
+        }
+        quoteInfo = backwardQuoteMap.get(c);
+        if (typeof quoteInfo !== "undefined") {
+          quoteStack.unshift(quoteInfo[0]);
+        }
+      }
+      quoteStack = [];
+      for (; cursorEnd < textLength; ++cursorEnd) {
+        let c = text[cursorEnd];
+        if (c === "\n" && terminateAtNewlines) {
+          break;
+        }
+        if (quoteStack.length === 0) {
+          let terminatorInfo = terminatorMap.get(c);
+          if (typeof terminatorInfo !== "undefined") {
+            while (terminatorInfo[1] && cursorEnd < textLength) {
+              ++cursorEnd;
+              if (cursorEnd === textLength) {
+                break;
+              }
+              c = text[cursorEnd];
+              terminatorInfo = terminatorMap.get(c);
+              if (typeof terminatorInfo === "undefined") {
+                break;
+              }
+            }
+            break;
+          }
+        }
+        let quoteInfo = backwardQuoteMap.get(c);
+        if (typeof quoteInfo !== "undefined") {
+          if (quoteStack.length === 0) {
+            while (quoteInfo[1] && cursorEnd < textLength) {
+              ++cursorEnd;
+              if (cursorEnd === textLength) {
+                break;
+              }
+              c = text[cursorEnd];
+              quoteInfo = forwardQuoteMap.get(c);
+              if (typeof quoteInfo === "undefined") {
+                break;
+              }
+            }
+            break;
+          } else if (quoteStack[0] === c) {
+            quoteStack.pop();
+            continue;
+          }
+        }
+        quoteInfo = forwardQuoteMap.get(c);
+        if (typeof quoteInfo !== "undefined") {
+          quoteStack.unshift(quoteInfo[0]);
+        }
+      }
+      for (; cursorStart < startLength && this._isWhitespace(text[cursorStart]); ++cursorStart) {
+      }
+      for (; cursorEnd > textEndAnchor && this._isWhitespace(text[cursorEnd - 1]); --cursorEnd) {
+      }
+      return {
+        text: text.slice(cursorStart, cursorEnd).join(""),
+        offset: startLength - cursorStart
+      };
+    }
+    /**
+     * Scans the document for text or elements with text information at the given coordinate.
+     * Coordinates are provided in [client space](https://developer.mozilla.org/en-US/docs/Web/CSS/CSSOM_View/Coordinate_systems).
+     * @param {number} x The x coordinate to search at.
+     * @param {number} y The y coordinate to search at.
+     * @param {import('document-util').GetRangeFromPointOptions} options Options to configure how element detection is performed.
+     * @returns {?import('text-source').TextSource} A range for the hovered text or element, or `null` if no applicable content was found.
+     */
+    _getRangeFromPointInternal(x, y, options) {
+      const { deepContentScan, normalizeCssZoom, language, browser } = options;
+      const elements = this._getElementsFromPoint(x, y, deepContentScan);
+      let imposter = null;
+      let imposterContainer = null;
+      let imposterSourceElement = null;
+      if (elements.length > 0) {
+        const element = elements[0];
+        switch (element.nodeName.toUpperCase()) {
+          case "IMG":
+          case "BUTTON":
+          case "SELECT":
+            return TextSourceElement.create(element);
+          case "INPUT":
+            if (
+              /** @type {HTMLInputElement} */
+              element.type === "text" || /** @type {HTMLInputElement} */
+              element.type === "search"
+            ) {
+              imposterSourceElement = element;
+              [imposter, imposterContainer] = this._createImposter(
+                /** @type {HTMLInputElement} */
+                element,
+                false
+              );
+            }
+            break;
+          case "TEXTAREA":
+            imposterSourceElement = element;
+            [imposter, imposterContainer] = this._createImposter(
+              /** @type {HTMLTextAreaElement} */
+              element,
+              true
+            );
+            break;
+        }
+      }
+      const range = this._caretRangeFromPointExt(x, y, deepContentScan ? elements : [], normalizeCssZoom, language, browser);
+      if (range !== null) {
+        if (imposter !== null) {
+          this._setImposterStyle(
+            /** @type {HTMLDivElement} */
+            imposterContainer.style,
+            "z-index",
+            "-2147483646"
+          );
+          this._setImposterStyle(imposter.style, "pointer-events", "none");
+          return TextSourceRange.createFromImposter(
+            range,
+            /** @type {HTMLDivElement} */
+            imposterContainer,
+            /** @type {HTMLElement} */
+            imposterSourceElement
+          );
+        }
+        return TextSourceRange.create(range);
+      } else {
+        if (imposterContainer !== null) {
+          const { parentNode } = imposterContainer;
+          if (parentNode !== null) {
+            parentNode.removeChild(imposterContainer);
+          }
+        }
+        return null;
+      }
+    }
+    /**
+     * @param {CSSStyleDeclaration} style
+     * @param {string} propertyName
+     * @param {string} value
+     */
+    _setImposterStyle(style, propertyName, value) {
+      style.setProperty(propertyName, value, "important");
+    }
+    /**
+     * @param {HTMLInputElement|HTMLTextAreaElement} element
+     * @param {boolean} isTextarea
+     * @returns {[imposter: ?HTMLDivElement, container: ?HTMLDivElement]}
+     */
+    _createImposter(element, isTextarea) {
+      const body = document.body;
+      if (body === null) {
+        return [null, null];
+      }
+      const elementStyle = window.getComputedStyle(element);
+      const elementRect = element.getBoundingClientRect();
+      const documentRect = document.documentElement.getBoundingClientRect();
+      let left = elementRect.left - documentRect.left;
+      let top = elementRect.top - documentRect.top;
+      const container = document.createElement("div");
+      const containerStyle = container.style;
+      this._setImposterStyle(containerStyle, "all", "initial");
+      this._setImposterStyle(containerStyle, "position", "absolute");
+      this._setImposterStyle(containerStyle, "left", "0");
+      this._setImposterStyle(containerStyle, "top", "0");
+      this._setImposterStyle(containerStyle, "width", `${documentRect.width}px`);
+      this._setImposterStyle(containerStyle, "height", `${documentRect.height}px`);
+      this._setImposterStyle(containerStyle, "overflow", "hidden");
+      this._setImposterStyle(containerStyle, "opacity", "0");
+      this._setImposterStyle(containerStyle, "pointer-events", "none");
+      this._setImposterStyle(containerStyle, "z-index", "2147483646");
+      const imposter = document.createElement("div");
+      const imposterStyle = imposter.style;
+      let value = element.value;
+      if (value.endsWith("\n")) {
+        value += "\n";
+      }
+      imposter.textContent = value;
+      for (let i = 0, ii = elementStyle.length; i < ii; ++i) {
+        const property = elementStyle[i];
+        this._setImposterStyle(imposterStyle, property, elementStyle.getPropertyValue(property));
+      }
+      this._setImposterStyle(imposterStyle, "position", "absolute");
+      this._setImposterStyle(imposterStyle, "top", `${top}px`);
+      this._setImposterStyle(imposterStyle, "left", `${left}px`);
+      this._setImposterStyle(imposterStyle, "margin", "0");
+      this._setImposterStyle(imposterStyle, "pointer-events", "auto");
+      if (isTextarea) {
+        if (elementStyle.overflow === "visible") {
+          this._setImposterStyle(imposterStyle, "overflow", "auto");
+        }
+      } else {
+        this._setImposterStyle(imposterStyle, "overflow", "hidden");
+        this._setImposterStyle(imposterStyle, "white-space", "nowrap");
+        this._setImposterStyle(imposterStyle, "line-height", elementStyle.height);
+      }
+      container.appendChild(imposter);
+      body.appendChild(container);
+      const imposterRect = imposter.getBoundingClientRect();
+      if (imposterRect.width !== elementRect.width || imposterRect.height !== elementRect.height) {
+        const width = Number.parseFloat(elementStyle.width) + (elementRect.width - imposterRect.width);
+        const height = Number.parseFloat(elementStyle.height) + (elementRect.height - imposterRect.height);
+        this._setImposterStyle(imposterStyle, "width", `${width}px`);
+        this._setImposterStyle(imposterStyle, "height", `${height}px`);
+      }
+      if (imposterRect.left !== elementRect.left || imposterRect.top !== elementRect.top) {
+        left += elementRect.left - imposterRect.left;
+        top += elementRect.top - imposterRect.top;
+        this._setImposterStyle(imposterStyle, "left", `${left}px`);
+        this._setImposterStyle(imposterStyle, "top", `${top}px`);
+      }
+      imposter.scrollTop = element.scrollTop;
+      imposter.scrollLeft = element.scrollLeft;
+      return [imposter, container];
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {boolean} all
+     * @returns {Element[]}
+     */
+    _getElementsFromPoint(x, y, all) {
+      try {
+        if (all) {
+          const elements = document.elementsFromPoint(x, y);
+          return elements.filter((e2, i) => elements.indexOf(e2) === i);
+        }
+        const e = document.elementFromPoint(x, y);
+        return e !== null ? [e] : [];
+      } catch (e) {
+        log.logGenericError(e, "log");
+        return [];
+      }
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Range} range
+     * @param {boolean} normalizeCssZoom
+     * @param {?string} language
+     * @param {?import('environment').Browser} browser
+     * @returns {boolean}
+     */
+    _isPointInRange(x, y, range, normalizeCssZoom, language, browser) {
+      const { startContainer } = range;
+      if (startContainer.nodeType !== Node.TEXT_NODE) {
+        return false;
+      }
+      if (normalizeCssZoom) {
+        const scale = computeZoomScale(startContainer);
+        x /= scale;
+        y /= scale;
+      }
+      const nodePre = range.endContainer;
+      const offsetPre = range.endOffset;
+      try {
+        const { node: node2, offset: offset2, content: content2 } = new DOMTextScanner(nodePre, offsetPre, true, false).seek(1);
+        range.setEnd(node2, offset2);
+        if (!this._isWhitespace(content2) && isPointInAnyRect(x, y, range.getClientRects(), language, browser)) {
+          return true;
+        }
+      } finally {
+        range.setEnd(nodePre, offsetPre);
+      }
+      const { node, offset, content } = new DOMTextScanner(startContainer, range.startOffset, true, false).seek(-1);
+      range.setStart(node, offset);
+      if (!this._isWhitespace(content) && isPointInAnyRect(x, y, range.getClientRects(), language, browser)) {
+        range.setEnd(node, offset);
+        return true;
+      }
+      return false;
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {?Range}
+     */
+    _caretRangeFromPoint(x, y) {
+      if (typeof document.caretPositionFromPoint === "function") {
+        const caretPositionFromPointResult = this._caretPositionFromPoint(x, y);
+        if (caretPositionFromPointResult) {
+          return caretPositionFromPointResult;
+        }
+      }
+      if (typeof document.caretRangeFromPoint === "function") {
+        return document.caretRangeFromPoint(x, y);
+      }
+      return null;
+    }
+    /**
+     * @param {Element | ShadowRoot} inputElement
+     * @returns {ShadowRoot[]}
+     */
+    _findShadowRoots(inputElement) {
+      const allElements = [inputElement, ...inputElement.querySelectorAll("*")];
+      const shadowRootContainingElements = [];
+      for (const element of allElements) {
+        if (!(element instanceof ShadowRoot) && !!element.shadowRoot) {
+          shadowRootContainingElements.push(element);
+        }
+      }
+      const shadowRoots = [];
+      for (const element of shadowRootContainingElements) {
+        if (element.shadowRoot) {
+          shadowRoots.push(element.shadowRoot);
+          const nestedShadowRoots = this._findShadowRoots(element.shadowRoot);
+          if (nestedShadowRoots) {
+            shadowRoots.push(...nestedShadowRoots);
+          }
+        }
+      }
+      return shadowRoots;
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {?Range}
+     */
+    _caretPositionFromPoint(x, y) {
+      const documentCaretPositionFromPoint = document.caretPositionFromPoint(x, y);
+      const documentCaretPositionOffsetNode = documentCaretPositionFromPoint?.offsetNode;
+      const shadowRootSearchRequired = documentCaretPositionOffsetNode instanceof Element && documentCaretPositionOffsetNode.nodeName !== "#text";
+      const shadowRoots = shadowRootSearchRequired ? this._findShadowRoots(documentCaretPositionOffsetNode) : [];
+      const position = shadowRoots.length > 0 ? document.caretPositionFromPoint(x, y, { shadowRoots }) : documentCaretPositionFromPoint;
+      if (position === null) {
+        return null;
+      }
+      const node = position.offsetNode;
+      if (node === null) {
+        return null;
+      }
+      let offset = 0;
+      const { nodeType } = node;
+      switch (nodeType) {
+        case Node.TEXT_NODE:
+          offset = position.offset;
+          break;
+        case Node.ELEMENT_NODE:
+          if (this._isElementUserSelectAll(
+            /** @type {Element} */
+            node
+          )) {
+            return this._caretPositionFromPointNormalizeStyles(
+              x,
+              y,
+              /** @type {Element} */
+              node
+            );
+          }
+          break;
+      }
+      try {
+        const range = document.createRange();
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+        return range;
+      } catch (e) {
+        return null;
+      }
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Element} nextElement
+     * @returns {?Range}
+     */
+    _caretPositionFromPointNormalizeStyles(x, y, nextElement) {
+      const previousStyles = /* @__PURE__ */ new Map();
+      try {
+        while (true) {
+          if (nextElement instanceof HTMLElement) {
+            this._recordPreviousStyle(previousStyles, nextElement);
+            nextElement.style.setProperty("user-select", "text", "important");
+          }
+          const position = (
+            /** @type {(x: number, y: number) => ?{offsetNode: Node, offset: number}} */
+            document.caretPositionFromPoint(x, y)
+          );
+          if (position === null) {
+            return null;
+          }
+          const node = position.offsetNode;
+          if (node === null) {
+            return null;
+          }
+          let offset = 0;
+          const { nodeType } = node;
+          switch (nodeType) {
+            case Node.TEXT_NODE:
+              offset = position.offset;
+              break;
+            case Node.ELEMENT_NODE:
+              if (this._isElementUserSelectAll(
+                /** @type {Element} */
+                node
+              )) {
+                if (previousStyles.has(
+                  /** @type {Element} */
+                  node
+                )) {
+                  return null;
+                }
+                nextElement = /** @type {Element} */
+                node;
+                continue;
+              }
+              break;
+          }
+          try {
+            const range = document.createRange();
+            range.setStart(node, offset);
+            range.setEnd(node, offset);
+            return range;
+          } catch (e) {
+            return null;
+          }
+        }
+      } finally {
+        this._revertStyles(previousStyles);
+      }
+    }
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Element[]} elements
+     * @param {boolean} normalizeCssZoom
+     * @param {?string} language
+     * @param {?import('environment').Browser} browser
+     * @returns {?Range}
+     */
+    _caretRangeFromPointExt(x, y, elements, normalizeCssZoom, language, browser) {
+      let previousStyles = null;
+      try {
+        let i = 0;
+        let startContainerPre = null;
+        while (true) {
+          const range = this._caretRangeFromPoint(x, y);
+          if (range === null) {
+            return null;
+          }
+          const startContainer = range.startContainer;
+          if (startContainerPre !== startContainer) {
+            if (this._isPointInRange(x, y, range, normalizeCssZoom, language, browser)) {
+              return range;
+            }
+            startContainerPre = startContainer;
+          }
+          if (previousStyles === null) {
+            previousStyles = /* @__PURE__ */ new Map();
+          }
+          i = this._disableTransparentElement(elements, i, previousStyles);
+          if (i < 0) {
+            return null;
+          }
+        }
+      } finally {
+        if (previousStyles !== null && previousStyles.size > 0) {
+          this._revertStyles(previousStyles);
+        }
+      }
+    }
+    /**
+     * @param {Element[]} elements
+     * @param {number} i
+     * @param {Map<Element, ?string>} previousStyles
+     * @returns {number}
+     */
+    _disableTransparentElement(elements, i, previousStyles) {
+      while (true) {
+        if (i >= elements.length) {
+          return -1;
+        }
+        const element = elements[i++];
+        if (this._isElementTransparent(element)) {
+          if (element instanceof HTMLElement) {
+            this._recordPreviousStyle(previousStyles, element);
+            element.style.setProperty("pointer-events", "none", "important");
+          }
+          return i;
+        }
+      }
+    }
+    /**
+     * @param {Map<Element, ?string>} previousStyles
+     * @param {Element} element
+     */
+    _recordPreviousStyle(previousStyles, element) {
+      if (previousStyles.has(element)) {
+        return;
+      }
+      const style = element.hasAttribute("style") ? element.getAttribute("style") : null;
+      previousStyles.set(element, style);
+    }
+    /**
+     * @param {Map<Element, ?string>} previousStyles
+     */
+    _revertStyles(previousStyles) {
+      for (const [element, style] of previousStyles.entries()) {
+        if (style === null) {
+          element.removeAttribute("style");
+        } else {
+          element.setAttribute("style", style);
+        }
+      }
+    }
+    /**
+     * @param {Element} element
+     * @returns {boolean}
+     */
+    _isElementTransparent(element) {
+      if (element === document.body || element === document.documentElement) {
+        return false;
+      }
+      const style = window.getComputedStyle(element);
+      return Number.parseFloat(style.opacity) <= 0 || style.visibility === "hidden" || style.backgroundImage === "none" && this._isColorTransparent(style.backgroundColor);
+    }
+    /**
+     * @param {string} cssColor
+     * @returns {boolean}
+     */
+    _isColorTransparent(cssColor) {
+      return this._transparentColorPattern.test(cssColor);
+    }
+    /**
+     * @param {Element} element
+     * @returns {boolean}
+     */
+    _isElementUserSelectAll(element) {
+      return getComputedStyle(element).userSelect === "all";
+    }
+    /**
+     * @param {string} string
+     * @returns {boolean}
+     */
+    _isWhitespace(string) {
+      return string.trim().length === 0;
+    }
+  };
+
+  // ../../../../../tmp/text-selection-entry.mjs
+  var _generator = new TextSourceGenerator();
+  var _enabled = true;
+  if (typeof da !== "undefined") {
+    da.on("settingsChanged", (s) => {
+      _enabled = s.enabled ?? true;
+    });
+  }
+  function _scanAt(x, y) {
+    if (!_enabled) return;
+    const source = _generator.getRangeFromPoint(x, y, {
+      forceOffset: false,
+      allowExtensionUrl: false
+    });
+    if (!source) return;
+    const text = source.text();
+    if (!text || !text.trim()) return;
+    const rects = source.getRects();
+    const rect = rects.length > 0 ? rects[0] : null;
+    if (typeof da !== "undefined") {
+      da.emit("selection", {
+        text,
+        x,
+        y,
+        rect: rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null
+      });
+    }
+  }
+  var _lastX = 0;
+  var _lastY = 0;
+  var _rafPending = false;
+  document.addEventListener("mousemove", (e) => {
+    _lastX = e.clientX;
+    _lastY = e.clientY;
+    if (_rafPending) return;
+    _rafPending = true;
+    requestAnimationFrame(() => {
+      _rafPending = false;
+      _scanAt(_lastX, _lastY);
+    });
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    const t = e.changedTouches[0];
+    if (t) _scanAt(t.clientX, t.clientY);
+  }, { passive: true });
+})();

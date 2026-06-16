@@ -7,18 +7,25 @@
     {
       "id": "da.default.text-selection",
       "name": "Text Selection",
-      "version": "0.0.0",
+      "version": "0.1.0-yomitan.26.5.19.0",
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "textSelection",
       "description": "Yomitan-based text selection — dom-text-scanner / text-source-* / string-util bundled by CI.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
+        "hosts": [
+          "<all_urls>"
+        ],
         "capabilities": []
       },
       "settings": [
-        { "key": "enabled", "type": "bool", "label": "Enable selection", "default": true }
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Enable selection",
+          "default": true
+        }
       ],
       "codeUrl": "plugins/text-selection/script.dap"
     },
@@ -32,12 +39,31 @@
       "description": "Reads .ytp-caption-segment nodes on YouTube and emits subtitles via da.emit('subtitles'). Pushes on MutationObserver so live captions stream in real time.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["*youtube.com*", "*youtu.be*"],
+        "hosts": [
+          "*youtube.com*",
+          "*youtu.be*"
+        ],
         "capabilities": []
       },
       "settings": [
-        { "key": "enabled",  "type": "bool",   "label": "Enable subtitles", "default": true },
-        { "key": "language", "type": "choice", "label": "Language",         "options": ["ja", "zh", "ko", "en"], "default": "ja" }
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Enable subtitles",
+          "default": true
+        },
+        {
+          "key": "language",
+          "type": "choice",
+          "label": "Language",
+          "options": [
+            "ja",
+            "zh",
+            "ko",
+            "en"
+          ],
+          "default": "ja"
+        }
       ],
       "codeUrl": "plugins/subtitle/script.dap"
     },
@@ -51,11 +77,18 @@
       "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab (free, no capability declaration needed).",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
+        "hosts": [
+          "<all_urls>"
+        ],
         "capabilities": []
       },
       "settings": [
-        { "key": "enabled", "type": "bool", "label": "Show furigana", "default": true }
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Show furigana",
+          "default": true
+        }
       ],
       "codeUrl": "plugins/general/script.dap"
     }

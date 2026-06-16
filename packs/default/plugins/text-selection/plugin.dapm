@@ -1,17 +1,24 @@
 {
   "id": "da.default.text-selection",
   "name": "Text Selection",
-  "version": "0.0.0",
+  "version": "0.1.0-yomitan.26.5.19.0",
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "textSelection",
   "description": "Yomitan-based text selection — dom-text-scanner / text-source-* / string-util bundled by CI. Script placeholder; replaced by GH Action build.",
   "author": "DaLang",
   "permissions": {
-    "hosts": ["<all_urls>"],
+    "hosts": [
+      "<all_urls>"
+    ],
     "capabilities": []
   },
   "settings": [
-    { "key": "enabled", "type": "bool", "label": "Enable selection", "default": true }
+    {
+      "key": "enabled",
+      "type": "bool",
+      "label": "Enable selection",
+      "default": true
+    }
   ]
 }
