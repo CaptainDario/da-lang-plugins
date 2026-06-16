@@ -1,0 +1,22 @@
+(function () {
+  var STYLE_ID = '__da_settings_choice_theme';
+
+  function applyTheme(theme) {
+    var existing = document.getElementById(STYLE_ID);
+    if (existing) existing.remove();
+    if (theme === 'none') return;
+
+    var css = theme === 'dark'
+      ? 'html{filter:invert(1) hue-rotate(180deg)} img,video{filter:invert(1) hue-rotate(180deg)}'
+      : 'html{filter:brightness(1.1) saturate(0.9)}';
+
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  da.onSettingsChanged(function (s) {
+    applyTheme(s.theme || 'none');
+  });
+})();

@@ -1,0 +1,42 @@
+(function () {
+  var cfg = { enabled: true, language: 'ja' };
+  var SELECTOR = '.ytp-caption-segment';
+  var _lastText = '';
+  var _observer = null;
+
+  function readAndEmit() {
+    if (!cfg.enabled) return;
+    var nodes = document.querySelectorAll(SELECTOR);
+    if (!nodes.length) return;
+    var text = Array.prototype.map.call(nodes, function (n) {
+      return n.textContent;
+    }).join('').trim();
+    if (!text || text === _lastText) return;
+    _lastText = text;
+    da.emit('subtitles', [{ text: text, language: cfg.language, start: 0, end: 0 }]);
+  }
+
+  function startObserver() {
+    if (_observer) return;
+    _observer = new MutationObserver(readAndEmit);
+    _observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+
+  function stopObserver() {
+    if (_observer) { _observer.disconnect(); _observer = null; }
+    _lastText = '';
+  }
+
+  da.onSettingsChanged(function (s) {
+    cfg.enabled = !!s.enabled;
+    cfg.language = s.language || 'ja';
+    if (cfg.enabled) { startObserver(); readAndEmit(); } else { stopObserver(); }
+  });
+
+  da.register('get', function () {
+    var nodes = document.querySelectorAll(SELECTOR);
+    return Array.prototype.map.call(nodes, function (n) {
+      return { text: n.textContent, language: cfg.language };
+    });
+  });
+})();

@@ -1,0 +1,71 @@
+name: Build Default Pack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'packs/default/**'
+  workflow_dispatch:
+    inputs:
+      yomitan_version:
+        description: 'Yomitan version tag to bundle (e.g. v24.9.14.0). Leave empty for latest stable.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-text-selection:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install esbuild
+        run: npm install -g esbuild
+
+      - name: Build text-selection plugin
+        run: node scripts/build-text-selection.mjs "${{ inputs.yomitan_version }}"
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet packs/default/ && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Commit updated plugin
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packs/default/
+          git commit -m "chore: update text-selection bundle (yomitan ${{ inputs.yomitan_version || 'latest' }})"
+          git push
+
+      - name: Create release
+        if: steps.diff.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.PACK_VERSION }}
+          name: Default pack ${{ env.PACK_VERSION }}
+          body: |
+            Automated build of the DaLang default plugin pack.
+
+            Bundled Yomitan version: ${{ inputs.yomitan_version || 'latest' }}
+          files: |
+            packs/default/index.json
+            packs/default/plugins/text-selection/script.dap
+            packs/default/plugins/text-selection/plugin.dapm
+            packs/default/plugins/subtitle/script.dap
+            packs/default/plugins/subtitle/plugin.dapm
+            packs/default/plugins/general/script.dap
+            packs/default/plugins/general/plugin.dapm

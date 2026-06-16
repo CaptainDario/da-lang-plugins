@@ -1,0 +1,85 @@
+(function () {
+  var cfg = { enabled: true };
+  var ATTR = 'data-da-furigana';
+  var _scheduled = false;
+
+  function isJapanese(text) {
+    return /[぀-ヿ一-鿿]/.test(text);
+  }
+
+  function wrapNode(textNode, surfaces, readings) {
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < surfaces.length; i++) {
+      var surface = surfaces[i];
+      var reading = readings[i];
+      if (reading && reading.trim() && reading !== surface) {
+        var ruby = document.createElement('ruby');
+        ruby.setAttribute(ATTR, '1');
+        ruby.appendChild(document.createTextNode(surface));
+        var rt = document.createElement('rt');
+        rt.textContent = reading;
+        ruby.appendChild(rt);
+        frag.appendChild(ruby);
+      } else {
+        frag.appendChild(document.createTextNode(surface));
+      }
+    }
+    textNode.parentNode.replaceChild(frag, textNode);
+  }
+
+  async function annotateNode(textNode) {
+    var text = textNode.nodeValue || '';
+    if (!isJapanese(text)) return;
+    try {
+      var result = await da.host.mecab(text);
+      if (result && result.surfaces && result.readings) {
+        wrapNode(textNode, result.surfaces, result.readings);
+      }
+    } catch (_) {}
+  }
+
+  function collectTextNodes(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var p = node.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        if (p.closest('ruby[' + ATTR + ']') || p.closest('script,style,noscript')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return isJapanese(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      },
+    });
+    var nodes = [];
+    var n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  function removeAnnotations() {
+    var rubies = document.querySelectorAll('ruby[' + ATTR + ']');
+    rubies.forEach(function (ruby) {
+      var text = ruby.firstChild ? ruby.firstChild.nodeValue : ruby.textContent;
+      ruby.replaceWith(document.createTextNode(text));
+    });
+  }
+
+  async function annotate() {
+    if (!cfg.enabled) return;
+    var nodes = collectTextNodes(document.body);
+    for (var i = 0; i < nodes.length; i++) {
+      if (!cfg.enabled) break;
+      await annotateNode(nodes[i]);
+    }
+  }
+
+  function schedule() {
+    if (_scheduled) return;
+    _scheduled = true;
+    setTimeout(function () { _scheduled = false; annotate(); }, 300);
+  }
+
+  da.onSettingsChanged(function (s) {
+    cfg.enabled = !!s.enabled;
+    if (cfg.enabled) { schedule(); } else { removeAnnotations(); }
+  });
+})();

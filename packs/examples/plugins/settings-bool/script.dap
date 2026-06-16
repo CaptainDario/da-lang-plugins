@@ -1,0 +1,29 @@
+(function () {
+  var BANNER_ID = '__da_settings_bool_banner';
+
+  function ensureBanner() {
+    var el = document.getElementById(BANNER_ID);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = BANNER_ID;
+      el.style.cssText = [
+        'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:2147483647',
+        'background:#4caf50', 'color:#fff', 'font-family:sans-serif',
+        'font-size:13px', 'padding:6px 12px', 'text-align:center',
+        'pointer-events:none',
+      ].join(';');
+      el.textContent = 'da.examples.settings-bool — banner enabled';
+      document.documentElement.appendChild(el);
+    }
+    return el;
+  }
+
+  da.onSettingsChanged(function (s) {
+    if (s.enabled) {
+      ensureBanner().style.display = '';
+    } else {
+      var el = document.getElementById(BANNER_ID);
+      if (el) el.style.display = 'none';
+    }
+  });
+})();
