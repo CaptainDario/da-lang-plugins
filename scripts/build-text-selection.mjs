@@ -100,33 +100,105 @@ async function fetchYomitanSource(tag) {
  * It imports the Yomitan classes and wires them to the `da` bridge.
  */
 function entrySource(srcDir) {
-  // Use POSIX paths in the import statement (esbuild runs on Linux in CI)
   const gen = join(srcDir, 'dom', 'text-source-generator.js').replace(/\\/g, '/');
+  const scanner = join(srcDir, 'dom', 'dom-text-scanner.js').replace(/\\/g, '/');
   return `
 import { TextSourceGenerator } from '${gen}';
+import { DOMTextScanner } from '${scanner}';
+
+// ── settings (kept in sync with plugin.dapm) ──────────────────────────────────
+let _s = {
+  enabled:             true,
+  scanLength:          16,
+  scanDelay:           20,
+  scanResolution:      'character',
+  layoutAwareScan:     true,
+  deepDomScan:         false,
+  normalizeCssZoom:    true,
+  scanOnTouchTap:      true,
+  scanOnTouchMove:     false,
+  sentenceExtent:      200,
+  alphanumeric:        true,
+  selectText:          true,
+  scanWithoutMouseMove: true,
+};
 
 const _generator = new TextSourceGenerator();
-let _enabled = true;
 
-// Receive settings changes pushed by the host
 if (typeof da !== 'undefined') {
-  da.on('settingsChanged', (s) => { _enabled = s.enabled ?? true; });
+  da.on('settingsChanged', (s) => { _s = { ..._s, ...s }; });
 }
 
+// ── coordinate adjustment for CSS zoom ───────────────────────────────────────
+function _adjustCoords(x, y) {
+  if (!_s.normalizeCssZoom) return { x, y };
+  const zoom = parseFloat(document.documentElement.style.zoom) || 1;
+  return { x: x / zoom, y: y / zoom };
+}
+
+// ── extract surrounding sentence context ─────────────────────────────────────
+function _extractSentence(node, offset, extent) {
+  if (extent <= 0) return '';
+  try {
+    const fwd = new DOMTextScanner(node, offset, false, _s.layoutAwareScan);
+    fwd.seek(extent);
+    const bwd = new DOMTextScanner(node, offset, false, _s.layoutAwareScan);
+    bwd.seek(-extent);
+    return bwd.content + fwd.content;
+  } catch (_) {
+    return '';
+  }
+}
+
+// ── core scan ────────────────────────────────────────────────────────────────
 function _scanAt(x, y) {
-  if (!_enabled) return;
-  const source = _generator.getRangeFromPoint(x, y, {
+  if (!_s.enabled) return;
+
+  const { x: ax, y: ay } = _adjustCoords(x, y);
+  const source = _generator.getRangeFromPoint(ax, ay, {
     forceOffset: false,
     allowExtensionUrl: false,
+    normalizeCssZoom: _s.normalizeCssZoom,
   });
   if (!source) return;
-  const text = source.text();
-  if (!text || !text.trim()) return;
-  const rects = source.getRects();
-  const rect = rects.length > 0 ? rects[0] : null;
+
+  const fullText = source.text();
+  if (!fullText || !fullText.trim()) return;
+
+  // alphanumeric filter: skip if text has no CJK characters and setting is off
+  if (!_s.alphanumeric && !/[\\u3000-\\u9fff\\uf900-\\ufaff\\u{20000}-\\u{2a6df}]/u.test(fullText)) return;
+
+  const text = _s.scanResolution === 'word'
+    ? fullText.match(/\\S+/)?.[0] ?? fullText
+    : fullText.slice(0, _s.scanLength);
+
+  const rects = source.getRects ? source.getRects() : [];
+  const rect  = rects.length > 0 ? rects[0] : null;
+
+  // selectText: apply browser native selection to the matched range
+  if (_s.selectText && source.getRange) {
+    try {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(source.getRange());
+      }
+    } catch (_) {}
+  }
+
+  let sentence = '';
+  if (_s.sentenceExtent > 0 && source.getStartNode) {
+    sentence = _extractSentence(
+      source.getStartNode(),
+      source.getStartOffset?.() ?? 0,
+      _s.sentenceExtent,
+    );
+  }
+
   if (typeof da !== 'undefined') {
     da.emit('selection', {
       text,
+      sentence,
       x,
       y,
       rect: rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null,
@@ -134,21 +206,44 @@ function _scanAt(x, y) {
   }
 }
 
-let _lastX = 0, _lastY = 0, _rafPending = false;
+// ── mouse ─────────────────────────────────────────────────────────────────────
+let _lastX = 0, _lastY = 0, _timeoutId = null;
 
 document.addEventListener('mousemove', (e) => {
   _lastX = e.clientX;
   _lastY = e.clientY;
-  if (_rafPending) return;
-  _rafPending = true;
-  requestAnimationFrame(() => {
-    _rafPending = false;
+  if (_s.scanDelay <= 0) {
     _scanAt(_lastX, _lastY);
-  });
+    return;
+  }
+  clearTimeout(_timeoutId);
+  _timeoutId = setTimeout(() => _scanAt(_lastX, _lastY), _s.scanDelay);
 }, { passive: true });
 
+// ── scan without mouse move ───────────────────────────────────────────────────
+// Re-scan at the last known pointer position when the page regains focus so the
+// user doesn't need to wiggle the mouse after switching tabs or closing a popup.
+document.addEventListener('visibilitychange', () => {
+  if (!_s.scanWithoutMouseMove) return;
+  if (document.visibilityState === 'visible') _scanAt(_lastX, _lastY);
+});
+
+window.addEventListener('focus', () => {
+  if (_s.scanWithoutMouseMove) _scanAt(_lastX, _lastY);
+});
+
+// ── touch ─────────────────────────────────────────────────────────────────────
+// Listeners are unconditional; the setting is checked inside so changes take
+// effect without re-registering.
 document.addEventListener('touchend', (e) => {
+  if (!_s.scanOnTouchTap) return;
   const t = e.changedTouches[0];
+  if (t) _scanAt(t.clientX, t.clientY);
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (!_s.scanOnTouchMove) return;
+  const t = e.touches[0];
   if (t) _scanAt(t.clientX, t.clientY);
 }, { passive: true });
 `.trimStart();
@@ -211,13 +306,6 @@ writeFileSync(scriptPath, bundleJs, 'utf8');
 console.log(`Updating version to ${pluginVersion}…`);
 updateDapmVersion(dapmPath, pluginVersion);
 updateIndexVersion(indexPath, 'da.default.text-selection', pluginVersion);
-
-// Expose version for the GH Action release step via GITHUB_ENV
-if (process.env.GITHUB_ENV) {
-  const packIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
-  const packVersion = `${packIndex.version}-yomitan.${yomitanVersion}`;
-  writeFileSync(process.env.GITHUB_ENV, `PACK_VERSION=${packVersion}\n`, { flag: 'a' });
-}
 
 // Cleanup
 console.log('Cleaning up temporary files…');

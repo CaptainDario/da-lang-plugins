@@ -11,11 +11,10 @@
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "textSelection",
-      "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, capability check, and trigger modes.",
+      "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, and trigger modes.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": ["clipboard"]
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "enabled",     "type": "bool",   "label": "Enable selection",        "default": true },
@@ -36,8 +35,7 @@
       "description": "Reference subtitle plugin — demonstrates da.register('get'), da.emit('subtitles'), MutationObserver push, and language tagging.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "enabled",  "type": "bool",   "label": "Enable subtitles", "default": true },
@@ -52,11 +50,10 @@
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "general",
-      "description": "Reference general plugin — demonstrates DOM modification, da.register for app-callable functions, da.emit('log'), and capability-gated network access.",
+      "description": "Reference general plugin — demonstrates DOM modification, da.register for app-callable functions, and da.emit('log').",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": ["network"]
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "invertColors", "type": "bool",   "label": "Invert page colors",  "default": false },
@@ -77,8 +74,7 @@
       "description": "Example plugin with a single bool setting. Toggles a visible banner at the top of the page so the effect of onSettingsChanged is immediately observable.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "enabled", "type": "bool", "label": "Show banner", "default": true }
@@ -95,8 +91,7 @@
       "description": "Example plugin with a single int setting. Sets the base font size on the page body so the effect of onSettingsChanged is immediately observable.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "fontSize", "type": "int", "label": "Base font size (px)", "default": 16, "min": 8, "max": 32 }
@@ -113,8 +108,7 @@
       "description": "Example plugin with a single double setting. Sets the opacity of the page body so the effect of onSettingsChanged is immediately observable.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "opacity", "type": "double", "label": "Page opacity", "default": 1.0, "min": 0.1, "max": 1.0 }
@@ -131,8 +125,7 @@
       "description": "Example plugin with a single string setting. Shows the string in a fixed footer banner so the effect of onSettingsChanged is immediately observable.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "bannerText", "type": "string", "label": "Banner text", "default": "DaLang" }
@@ -149,8 +142,7 @@
       "description": "Example plugin with a single choice setting. Applies a light or dark color scheme override to the page so the effect of onSettingsChanged is immediately observable.",
       "author": "DaLang",
       "permissions": {
-        "hosts": ["<all_urls>"],
-        "capabilities": []
+        "hosts": ["<all_urls>"]
       },
       "settings": [
         { "key": "theme", "type": "choice", "label": "Force theme", "options": ["none", "light", "dark"], "default": "none" }

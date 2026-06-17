@@ -5,13 +5,18 @@
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "general",
-  "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab (free, no capability declaration needed).",
+  "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab.",
   "author": "DaLang",
   "permissions": {
-    "hosts": ["<all_urls>"],
-    "capabilities": []
+    "hosts": ["<all_urls>"]
   },
   "settings": [
-    { "key": "enabled", "type": "bool", "label": "Show furigana", "default": true }
+    {
+      "key": "enabled",
+      "type": "bool",
+      "label": "Show furigana",
+      "description": "Annotate Japanese text on every page with ruby furigana readings from MeCab.",
+      "default": true
+    }
   ]
 }

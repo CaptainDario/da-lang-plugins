@@ -8,11 +8,23 @@
   "description": "Reads .ytp-caption-segment nodes on YouTube and emits subtitles via da.emit('subtitles'). Pushes on MutationObserver so live captions stream in real time.",
   "author": "DaLang",
   "permissions": {
-    "hosts": ["*youtube.com*", "*youtu.be*"],
-    "capabilities": []
+    "hosts": ["*youtube.com*", "*youtu.be*"]
   },
   "settings": [
-    { "key": "enabled",  "type": "bool",   "label": "Enable subtitles", "default": true },
-    { "key": "language", "type": "choice", "label": "Language",         "options": ["ja", "zh", "ko", "en"], "default": "ja" }
+    {
+      "key": "enabled",
+      "type": "bool",
+      "label": "Enable subtitles",
+      "description": "Capture live subtitle text from the YouTube player and forward it to the app.",
+      "default": true
+    },
+    {
+      "key": "language",
+      "type": "choice",
+      "label": "Subtitle language",
+      "description": "Only forward subtitles that match this language track. Other tracks are ignored.",
+      "options": ["ja", "zh", "ko", "en"],
+      "default": "ja"
+    }
   ]
 }

@@ -56,13 +56,9 @@
     };
   });
 
-  // ── Pull: capability-gated network ping ───────────────────────────────────
+  // ── Pull: network ping (the page's own fetch) ─────────────────────────────
 
   da.register('ping', function (url) {
-    if (!da.can('network')) {
-      da.emit('log', { level: 'warn', message: 'network capability not granted' });
-      return null;
-    }
     return fetch(url, { method: 'HEAD' })
       .then(function (r) { return { status: r.status, ok: r.ok }; })
       .catch(function (e) { return { error: String(e) }; });

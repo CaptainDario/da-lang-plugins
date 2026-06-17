@@ -5,11 +5,10 @@
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "general",
-  "description": "Reference general plugin — demonstrates direct DOM modification, da.register for app-callable functions, and capability-gated host APIs.",
+  "description": "Reference general plugin — demonstrates direct DOM modification and da.register for app-callable functions.",
   "author": "DaLang",
   "permissions": {
-    "hosts": ["<all_urls>"],
-    "capabilities": ["network"]
+    "hosts": ["<all_urls>"]
   },
   "settings": [
     {

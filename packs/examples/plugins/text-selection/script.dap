@@ -55,10 +55,8 @@
       rects: selectionRects(sel),
     });
 
-    // capability check: copy to clipboard only when the host grants it
-    if (da.can('clipboard')) {
-      navigator.clipboard.writeText(raw).catch(function () {});
-    }
+    // copy the selected text via the page's own clipboard API
+    navigator.clipboard.writeText(raw).catch(function () {});
   }
 
   // ── Event wiring (respects trigger choice setting) ─────────────────────────

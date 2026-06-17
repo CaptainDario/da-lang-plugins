@@ -5,11 +5,10 @@
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "textSelection",
-  "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, capability check, and trigger modes.",
+  "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, and trigger modes.",
   "author": "DaLang",
   "permissions": {
-    "hosts": ["<all_urls>"],
-    "capabilities": ["clipboard"]
+    "hosts": ["<all_urls>"]
   },
   "settings": [
     { "key": "enabled",     "type": "bool",   "label": "Enable selection",      "default": true },
