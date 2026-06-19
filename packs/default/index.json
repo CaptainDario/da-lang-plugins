@@ -13,23 +13,100 @@
       "kind": "textSelection",
       "description": "Yomitan-based text selection — dom-text-scanner / text-source-* / string-util bundled by CI.",
       "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "enabled",          "type": "bool",   "label": "Enable text selection",     "default": true },
-        { "key": "scanLength",       "type": "int",    "label": "Scan length",               "default": 16,  "min": 1,   "max": 200  },
-        { "key": "scanDelay",        "type": "int",    "label": "Scan delay (ms)",           "default": 20,  "min": 0,   "max": 1000 },
-        { "key": "scanResolution",   "type": "choice", "label": "Scan resolution",           "default": "character", "options": ["character", "word"] },
-        { "key": "layoutAwareScan",  "type": "bool",   "label": "Layout-aware scan",         "default": true  },
-        { "key": "deepDomScan",      "type": "bool",   "label": "Deep DOM scan",             "default": false },
-        { "key": "normalizeCssZoom", "type": "bool",   "label": "Normalize CSS zoom",        "default": true  },
-        { "key": "scanOnTouchTap",   "type": "bool",   "label": "Scan on tap",               "default": true  },
-        { "key": "scanOnTouchMove",  "type": "bool",   "label": "Scan on touch drag",        "default": false },
-        { "key": "sentenceExtent",      "type": "int",    "label": "Sentence context length",   "default": 200, "min": 0, "max": 1000 },
-        { "key": "alphanumeric",        "type": "bool",   "label": "Scan non-CJK text",         "default": true  },
-        { "key": "selectText",          "type": "bool",   "label": "Highlight selected text",   "default": true  },
-        { "key": "scanWithoutMouseMove","type": "bool",   "label": "Scan without mouse move",   "default": true  }
+      "hosts": [
+        "<all_urls>"
       ],
-      "codeUrl": "plugins/text-selection/script.dap"
+      "settings": [
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Enable text selection",
+          "default": true
+        },
+        {
+          "key": "scanLength",
+          "type": "int",
+          "label": "Scan length",
+          "default": 16,
+          "min": 1,
+          "max": 200
+        },
+        {
+          "key": "scanDelay",
+          "type": "int",
+          "label": "Scan delay (ms)",
+          "default": 20,
+          "min": 0,
+          "max": 1000
+        },
+        {
+          "key": "scanResolution",
+          "type": "choice",
+          "label": "Scan resolution",
+          "default": "character",
+          "options": [
+            "character",
+            "word"
+          ]
+        },
+        {
+          "key": "layoutAwareScan",
+          "type": "bool",
+          "label": "Layout-aware scan",
+          "default": true
+        },
+        {
+          "key": "deepDomScan",
+          "type": "bool",
+          "label": "Deep DOM scan",
+          "default": false
+        },
+        {
+          "key": "normalizeCssZoom",
+          "type": "bool",
+          "label": "Normalize CSS zoom",
+          "default": true
+        },
+        {
+          "key": "scanOnTouchTap",
+          "type": "bool",
+          "label": "Scan on tap",
+          "default": true
+        },
+        {
+          "key": "scanOnTouchMove",
+          "type": "bool",
+          "label": "Scan on touch drag",
+          "default": false
+        },
+        {
+          "key": "sentenceExtent",
+          "type": "int",
+          "label": "Sentence context length",
+          "default": 200,
+          "min": 0,
+          "max": 1000
+        },
+        {
+          "key": "alphanumeric",
+          "type": "bool",
+          "label": "Scan non-CJK text",
+          "default": true
+        },
+        {
+          "key": "selectText",
+          "type": "bool",
+          "label": "Highlight selected text",
+          "default": true
+        },
+        {
+          "key": "scanWithoutMouseMove",
+          "type": "bool",
+          "label": "Scan without mouse move",
+          "default": true
+        }
+      ],
+      "codeUrl": "https://raw.githubusercontent.com/CaptainDario/da-lang-plugins/main/packs/default/plugins/text-selection/script.dap"
     },
     {
       "id": "da.default.subtitle",
@@ -40,12 +117,31 @@
       "kind": "subtitle",
       "description": "Reads .ytp-caption-segment nodes on YouTube and emits subtitles via da.emit('subtitles'). Pushes on MutationObserver so live captions stream in real time.",
       "author": "DaLang",
-      "hosts": ["*youtube.com*", "*youtu.be*"],
-      "settings": [
-        { "key": "enabled",  "type": "bool",   "label": "Enable subtitles", "default": true },
-        { "key": "language", "type": "choice", "label": "Language",         "options": ["ja", "zh", "ko", "en"], "default": "ja" }
+      "hosts": [
+        "*youtube.com*",
+        "*youtu.be*"
       ],
-      "codeUrl": "plugins/subtitle/script.dap"
+      "settings": [
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Enable subtitles",
+          "default": true
+        },
+        {
+          "key": "language",
+          "type": "choice",
+          "label": "Language",
+          "options": [
+            "ja",
+            "zh",
+            "ko",
+            "en"
+          ],
+          "default": "ja"
+        }
+      ],
+      "codeUrl": "https://raw.githubusercontent.com/CaptainDario/da-lang-plugins/main/packs/default/plugins/subtitle/script.dap"
     },
     {
       "id": "da.default.general",
@@ -56,11 +152,18 @@
       "kind": "general",
       "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab.",
       "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "enabled", "type": "bool", "label": "Show furigana", "default": true }
+      "hosts": [
+        "<all_urls>"
       ],
-      "codeUrl": "plugins/general/script.dap"
+      "settings": [
+        {
+          "key": "enabled",
+          "type": "bool",
+          "label": "Show furigana",
+          "default": true
+        }
+      ],
+      "codeUrl": "https://raw.githubusercontent.com/CaptainDario/da-lang-plugins/main/packs/default/plugins/general/script.dap"
     }
   ]
 }

@@ -36,6 +36,9 @@ jobs:
       - name: Build text-selection plugin
         run: node scripts/build-text-selection.mjs "${{ inputs.yomitan_version }}"
 
+      - name: Rewrite index codeUrls to absolute
+        run: node scripts/absolutize-index-urls.mjs default
+
       - name: Commit updated plugin
         run: |
           git config user.name "github-actions[bot]"
