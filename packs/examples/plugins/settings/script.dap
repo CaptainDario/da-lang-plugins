@@ -1,0 +1,70 @@
+(function () {
+  var TOP_ID = '__da_settings_top_banner';
+  var FOOTER_ID = '__da_settings_footer_banner';
+  var THEME_ID = '__da_settings_theme';
+
+  function banner(id, edge, background) {
+    var el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.style.cssText = [
+        'position:fixed', edge + ':0', 'left:0', 'right:0',
+        'z-index:2147483647', 'background:' + background, 'color:#fff',
+        'font-family:sans-serif', 'font-size:13px', 'padding:6px 12px',
+        'text-align:center', 'pointer-events:none',
+      ].join(';');
+      document.documentElement.appendChild(el);
+    }
+    return el;
+  }
+
+  function applyEnabled(on) {
+    var el = banner(TOP_ID, 'top', '#4caf50');
+    el.textContent = 'da.examples.settings — banner enabled';
+    el.style.display = on ? '' : 'none';
+  }
+
+  function applyFontSize(value) {
+    var size = parseInt(value, 10);
+    if (!isNaN(size) && size > 0) {
+      document.documentElement.style.fontSize = size + 'px';
+    }
+  }
+
+  function applyOpacity(value) {
+    var opacity = parseFloat(value);
+    if (!isNaN(opacity)) {
+      document.body.style.opacity = String(Math.max(0.1, Math.min(1.0, opacity)));
+    }
+  }
+
+  function applyBannerText(text) {
+    var el = banner(FOOTER_ID, 'bottom', '#1976d2');
+    el.textContent = text;
+    el.style.display = text ? '' : 'none';
+  }
+
+  function applyTheme(theme) {
+    var existing = document.getElementById(THEME_ID);
+    if (existing) existing.remove();
+    if (!theme || theme === 'none') return;
+
+    var css = theme === 'dark'
+      ? 'html{filter:invert(1) hue-rotate(180deg)} img,video{filter:invert(1) hue-rotate(180deg)}'
+      : 'html{filter:brightness(1.1) saturate(0.9)}';
+
+    var style = document.createElement('style');
+    style.id = THEME_ID;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  da.onSettingsChanged(function (s) {
+    applyEnabled(s.enabled);
+    applyFontSize(s.fontSize);
+    applyOpacity(s.opacity);
+    applyBannerText(String(s.bannerText || ''));
+    applyTheme(s.theme);
+  });
+})();

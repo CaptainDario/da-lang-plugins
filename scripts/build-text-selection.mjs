@@ -192,6 +192,14 @@ function _extractSentence(source, extent) {
 
 // ── core scan ────────────────────────────────────────────────────────────────
 function _scanAt(x, y) {
+  try {
+    _scanAtImpl(x, y);
+  } catch (e) {
+    if (typeof da !== 'undefined') da.log('error', 'text-selection', String(e));
+  }
+}
+
+function _scanAtImpl(x, y) {
   const { x: ax, y: ay } = _adjustCoords(x, y);
   const source = _generator.getRangeFromPoint(ax, ay, {
     forceOffset: false,

@@ -61,16 +61,21 @@
     {
       "id": "da.examples.speak-selection",
       "name": "Speak Selection",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "general",
-      "description": "Reference host-capability plugin — adds a floating button that speaks the current selection through da.host.tts, and logs da.host.tts.engines() on load. Demonstrates the da.host call-and-await channel.",
+      "description": "Reference host-capability plugin — speaks the selected text from the OS selection menu and the page title from the plugins bar, both through da.host.tts. Logs da.host.tts.engines() on load.",
       "author": "DaLang",
       "hosts": ["<all_urls>"],
+      "contextMenuItems": [
+        { "id": "speak-selection", "label": "Speak selection" }
+      ],
+      "menuShortcuts": [
+        { "id": "speak-title", "label": "Speak page title" }
+      ],
       "settings": [
-        { "key": "enabled", "type": "bool",   "label": "Show speak button",               "default": true },
-        { "key": "engine",  "type": "string", "label": "TTS engine id (blank = default)",  "default": "" }
+        { "key": "engine", "type": "string", "label": "TTS engine id (blank = default)", "default": "" }
       ],
       "codeUrl": "plugins/speak-selection/script.dap"
     },
@@ -81,7 +86,7 @@
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "general",
-      "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less parse capability.",
+      "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.language.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less language capability.",
       "author": "DaLang",
       "hosts": ["<all_urls>"],
       "settings": [
@@ -90,79 +95,23 @@
       "codeUrl": "plugins/parse-selection/script.dap"
     },
     {
-      "id": "da.examples.settings-bool",
-      "name": "Settings: Bool",
+      "id": "da.examples.settings",
+      "name": "Settings",
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "general",
-      "description": "Example plugin with a single bool setting. Toggles a visible banner at the top of the page so the effect of onSettingsChanged is immediately observable.",
+      "description": "Reference settings plugin — declares all five setting types (bool, int, double, string, choice) and applies each live via onSettingsChanged so the effect is immediately observable.",
       "author": "DaLang",
       "hosts": ["<all_urls>"],
       "settings": [
-        { "key": "enabled", "type": "bool", "label": "Show banner", "default": true }
+        { "key": "enabled",    "type": "bool",   "label": "Show top banner",     "default": true },
+        { "key": "fontSize",   "type": "int",    "label": "Base font size (px)", "default": 16, "min": 8, "max": 32 },
+        { "key": "opacity",    "type": "double", "label": "Page opacity",        "default": 1.0, "min": 0.1, "max": 1.0 },
+        { "key": "bannerText", "type": "string", "label": "Footer banner text",  "default": "DaLang" },
+        { "key": "theme",      "type": "choice", "label": "Force theme",         "options": ["none", "light", "dark"], "default": "none" }
       ],
-      "codeUrl": "plugins/settings-bool/script.dap"
-    },
-    {
-      "id": "da.examples.settings-int",
-      "name": "Settings: Int",
-      "version": "0.1.0",
-      "runtime": "webview",
-      "family": "browserPlugin",
-      "kind": "general",
-      "description": "Example plugin with a single int setting. Sets the base font size on the page body so the effect of onSettingsChanged is immediately observable.",
-      "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "fontSize", "type": "int", "label": "Base font size (px)", "default": 16, "min": 8, "max": 32 }
-      ],
-      "codeUrl": "plugins/settings-int/script.dap"
-    },
-    {
-      "id": "da.examples.settings-double",
-      "name": "Settings: Double",
-      "version": "0.1.0",
-      "runtime": "webview",
-      "family": "browserPlugin",
-      "kind": "general",
-      "description": "Example plugin with a single double setting. Sets the opacity of the page body so the effect of onSettingsChanged is immediately observable.",
-      "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "opacity", "type": "double", "label": "Page opacity", "default": 1.0, "min": 0.1, "max": 1.0 }
-      ],
-      "codeUrl": "plugins/settings-double/script.dap"
-    },
-    {
-      "id": "da.examples.settings-string",
-      "name": "Settings: String",
-      "version": "0.1.0",
-      "runtime": "webview",
-      "family": "browserPlugin",
-      "kind": "general",
-      "description": "Example plugin with a single string setting. Shows the string in a fixed footer banner so the effect of onSettingsChanged is immediately observable.",
-      "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "bannerText", "type": "string", "label": "Banner text", "default": "DaLang" }
-      ],
-      "codeUrl": "plugins/settings-string/script.dap"
-    },
-    {
-      "id": "da.examples.settings-choice",
-      "name": "Settings: Choice",
-      "version": "0.1.0",
-      "runtime": "webview",
-      "family": "browserPlugin",
-      "kind": "general",
-      "description": "Example plugin with a single choice setting. Applies a light or dark color scheme override to the page so the effect of onSettingsChanged is immediately observable.",
-      "author": "DaLang",
-      "hosts": ["<all_urls>"],
-      "settings": [
-        { "key": "theme", "type": "choice", "label": "Force theme", "options": ["none", "light", "dark"], "default": "none" }
-      ],
-      "codeUrl": "plugins/settings-choice/script.dap"
+      "codeUrl": "plugins/settings/script.dap"
     }
   ]
 }

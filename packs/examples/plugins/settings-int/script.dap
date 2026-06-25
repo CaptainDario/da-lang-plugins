@@ -1,8 +1,0 @@
-(function () {
-  da.onSettingsChanged(function (s) {
-    var size = parseInt(s.fontSize, 10);
-    if (!isNaN(size) && size > 0) {
-      document.documentElement.style.fontSize = size + 'px';
-    }
-  });
-})();

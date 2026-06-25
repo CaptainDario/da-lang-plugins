@@ -1,8 +1,0 @@
-(function () {
-  da.onSettingsChanged(function (s) {
-    var opacity = parseFloat(s.opacity);
-    if (!isNaN(opacity)) {
-      document.body.style.opacity = String(Math.max(0.1, Math.min(1.0, opacity)));
-    }
-  });
-})();

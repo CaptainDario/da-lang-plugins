@@ -1,8 +1,5 @@
 (function () {
-  var cfg = { enabled: true, engine: '' };
-  var button = null;
-
-  // ── Speak via the host TTS capability ───────────────────────────────────────
+  var cfg = { engine: '' };
 
   function speak(text) {
     if (!text) return;
@@ -16,41 +13,18 @@
       });
   }
 
-  // The page's own selection; falls back to the title so the button is testable
-  // even with nothing selected.
-  function currentText() {
-    var sel = window.getSelection ? String(window.getSelection()) : '';
-    return sel && sel.trim() ? sel : document.title;
-  }
+  // Context-menu item: speaks the text the user selected (passed as args.text).
+  da.register('speak-selection', function (args) {
+    speak(args && args.text ? args.text : '');
+  });
 
-  // ── Floating trigger button ─────────────────────────────────────────────────
-
-  function ensureButton() {
-    if (!cfg.enabled) {
-      if (button) { button.remove(); button = null; }
-      return;
-    }
-    if (button) return;
-    button = document.createElement('button');
-    button.textContent = '🔊';
-    button.title = 'Speak selection';
-    button.style.cssText =
-      'position:fixed;right:16px;bottom:16px;z-index:2147483647;' +
-      'width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;' +
-      'font-size:20px;background:#1a73e8;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);';
-    button.addEventListener('click', function (e) {
-      e.preventDefault();
-      speak(currentText());
-    });
-    document.body && document.body.appendChild(button);
-  }
-
-  // ── Live settings ────────────────────────────────────────────────────────────
+  // Plugins-bar shortcut: speaks the page title.
+  da.register('speak-title', function () {
+    speak(document.title);
+  });
 
   da.onSettingsChanged(function (s) {
-    cfg.enabled = s.enabled;
     cfg.engine = s.engine || '';
-    ensureButton();
   });
 
   // Prove the channel: list the TTS engines usable right now.

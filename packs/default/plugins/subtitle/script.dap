@@ -38,9 +38,14 @@
   });
 
   da.register('get', function () {
-    var nodes = document.querySelectorAll(SELECTOR);
-    return Array.prototype.map.call(nodes, function (n) {
-      return { text: n.textContent, language: cfg.language };
-    });
+    try {
+      var nodes = document.querySelectorAll(SELECTOR);
+      return Array.prototype.map.call(nodes, function (n) {
+        return { text: n.textContent, language: cfg.language };
+      });
+    } catch (e) {
+      da.log('error', 'subtitle', String(e));
+      return [];
+    }
   });
 })();

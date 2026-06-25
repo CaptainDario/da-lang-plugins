@@ -39,6 +39,20 @@ members); a mismatched plugin makes the install throw.
   loaded in debug builds.
 - **extended** (`da.extended`) — extra plugins unlocked by purchase.
 
+## Errors & the plugin console
+
+Plugins log through `da.log(level, tag, message)` (`level` = `debug` / `info` /
+`warn` / `error`). The default plugins send every caught error to this channel as
+`da.log('error', '<plugin>', …)`, so a broken plugin reports instead of failing
+silently.
+
+Watch the logs live in the app:
+
+1. Enable **Settings → Advanced → local plugin development**.
+2. In the in-app browser, open the **⋯** menu and choose **Plugin console**.
+3. The console streams each plugin's `da.log` / `da.emit` output, tagged by plugin
+   and level — filter to `error` to spot failures.
+
 ## CI
 
 `.github/workflows/build-default-pack.yml` downloads the latest stable Yomitan,

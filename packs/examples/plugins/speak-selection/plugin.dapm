@@ -1,20 +1,20 @@
 {
   "id": "da.examples.speak-selection",
   "name": "Speak Selection",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "general",
-  "description": "Reference host-capability plugin — adds a floating button that speaks the current selection through da.host.tts, and logs da.host.tts.engines() on load. Demonstrates the da.host call-and-await channel.",
+  "description": "Reference host-capability plugin — speaks the selected text from the OS selection menu and the page title from the plugins bar, both through da.host.tts. Logs da.host.tts.engines() on load.",
   "author": "DaLang",
   "hosts": ["<all_urls>"],
+  "contextMenuItems": [
+    { "id": "speak-selection", "label": "Speak selection" }
+  ],
+  "menuShortcuts": [
+    { "id": "speak-title", "label": "Speak page title" }
+  ],
   "settings": [
-    {
-      "key": "enabled",
-      "type": "bool",
-      "label": "Show speak button",
-      "default": true
-    },
     {
       "key": "engine",
       "type": "string",
