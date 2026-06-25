@@ -106,25 +106,64 @@ function entrySource(srcDir) {
 import { TextSourceGenerator } from '${gen}';
 import { DOMTextScanner } from '${scanner}';
 
-// ── settings (kept in sync with plugin.dapm) ──────────────────────────────────
+// ── plugin settings (DOM scan mechanics; kept in sync with plugin.dapm) ───────
 let _s = {
+  layoutAwareScan:      true,
+  deepDomScan:          false,
+  normalizeCssZoom:     true,
+  alphanumeric:         false,
+  selectText:           true,
+  scanWithoutMouseMove: true,
+};
+
+// ── profile settings (shared across every screen, delivered via da.profile) ───
+let _p = {
   scanLength:          16,
   scanDelay:           20,
-  layoutAwareScan:     true,
-  deepDomScan:         false,
-  normalizeCssZoom:    true,
-  scanOnHover:         false,
-  scanOnTouchTap:      true,
   sentenceExtent:      200,
-  alphanumeric:        false,
-  selectText:          true,
-  scanWithoutMouseMove: true,
+  scanOnHover:         false,
+  scanOnHoverModifier: 'none',
+  scanOnTouchTap:      true,
+  scanOnTapModifier:   'none',
 };
 
 const _generator = new TextSourceGenerator();
 
+// The most recent scanned source, retained so the app can ask us to re-narrow
+// the highlight to the precise lookup unit it resolved (applySelection).
+let _lastSource = null;
+
 if (typeof da !== 'undefined') {
   da.onSettingsChanged((s) => { _s = { ..._s, ...s }; });
+  da.onProfileChanged((p) => { _p = { ..._p, ...p }; });
+
+  // Down-channel: the app resolved the unit and sends its length so we shrink
+  // the broad scan selection to it. There's no selectionchange listener here,
+  // so re-selecting can't loop back into a new scan.
+  da.register('applySelection', (range) => {
+    const end = (range && range.end) || 0;
+    if (!_lastSource || !_lastSource.clone || end <= 0) return false;
+    try {
+      const narrowed = _lastSource.clone();
+      if (narrowed.setEndOffset) narrowed.setEndOffset(end, false, _s.layoutAwareScan);
+      if (narrowed.select) narrowed.select();
+      _lastSource = narrowed;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  });
+}
+
+// ── true when the modifier key gating a scan trigger is held (none = always) ──
+function _modifierHeld(e, mod) {
+  switch (mod) {
+    case 'alt':   return !!e.altKey;
+    case 'ctrl':  return !!e.ctrlKey;
+    case 'shift': return !!e.shiftKey;
+    case 'meta':  return !!e.metaKey;
+    default:      return true;
+  }
 }
 
 // ── coordinate adjustment for CSS zoom ───────────────────────────────────────
@@ -165,7 +204,7 @@ function _scanAt(x, y) {
   // capture the text before reading it.
   if (source.setEndOffset) {
     try {
-      source.setEndOffset(_s.scanLength, false, _s.layoutAwareScan);
+      source.setEndOffset(_p.scanLength, false, _s.layoutAwareScan);
     } catch (_) {}
   }
 
@@ -177,6 +216,7 @@ function _scanAt(x, y) {
   if (!_s.alphanumeric && !/[\\u3000-\\u9fff\\uf900-\\ufaff\\u{20000}-\\u{2a6df}]/u.test(fullText)) return;
 
   const text = fullText;
+  _lastSource = source;
 
   const rects = source.getRects ? source.getRects() : [];
   const rect  = rects.length > 0 ? rects[0] : null;
@@ -190,8 +230,8 @@ function _scanAt(x, y) {
 
   let sentence = '';
   let sentenceOffset = 0;
-  if (_s.sentenceExtent > 0) {
-    const extracted = _extractSentence(source, _s.sentenceExtent);
+  if (_p.sentenceExtent > 0) {
+    const extracted = _extractSentence(source, _p.sentenceExtent);
     sentence = extracted.text;
     sentenceOffset = extracted.offset;
   }
@@ -222,13 +262,13 @@ document.addEventListener('mousemove', (e) => {
   }
   _lastX = e.clientX;
   _lastY = e.clientY;
-  if (!_s.scanOnHover) return;
-  if (_s.scanDelay <= 0) {
+  if (!_p.scanOnHover || !_modifierHeld(e, _p.scanOnHoverModifier)) return;
+  if (_p.scanDelay <= 0) {
     _scanAt(_lastX, _lastY);
     return;
   }
   clearTimeout(_timeoutId);
-  _timeoutId = setTimeout(() => _scanAt(_lastX, _lastY), _s.scanDelay);
+  _timeoutId = setTimeout(() => _scanAt(_lastX, _lastY), _p.scanDelay);
 }, { passive: true });
 
 // ── scan without mouse move ───────────────────────────────────────────────────
@@ -249,8 +289,8 @@ window.addEventListener('focus', () => {
 // pointerup fires for mouse, touch, and pen with client coordinates — unlike
 // click, which the embedded webview may not deliver.
 document.addEventListener('pointerup', (e) => {
-  if (typeof da !== 'undefined') da.log('debug', 'input', 'pointerup received; scanOnTouchTap=' + _s.scanOnTouchTap);
-  if (!_s.scanOnTouchTap) return;
+  if (typeof da !== 'undefined') da.log('debug', 'input', 'pointerup received; scanOnTouchTap=' + _p.scanOnTouchTap);
+  if (!_p.scanOnTouchTap || !_modifierHeld(e, _p.scanOnTapModifier)) return;
   _scanAt(e.clientX, e.clientY);
 }, { passive: true });
 `.trimStart();

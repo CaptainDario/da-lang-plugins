@@ -18,36 +18,6 @@
       ],
       "settings": [
         {
-          "key": "scanLength",
-          "type": "int",
-          "label": "Scan length",
-          "description": "How many characters to read starting at the cursor — the most a single lookup can capture.",
-          "default": 16,
-          "min": 1,
-          "max": 200
-        },
-        {
-          "key": "scanDelay",
-          "type": "int",
-          "label": "Scan delay (ms)",
-          "description": "How long to wait after the cursor stops moving before scanning. Higher values use less CPU; 0 scans continuously.",
-          "default": 20,
-          "min": 0,
-          "max": 1000
-        },
-        {
-          "key": "selectionMethod",
-          "type": "choice",
-          "label": "Selection method",
-          "description": "How the scanned text is split into the word to look up: a single character, a MeCab token's dictionary form, or a MeCab lemma by character.",
-          "options": [
-            "char",
-            "mecabLemmaToken",
-            "mecabLemmaChar"
-          ],
-          "default": "mecabLemmaToken"
-        },
-        {
           "key": "layoutAwareScan",
           "type": "bool",
           "label": "Layout-aware scan",
@@ -67,29 +37,6 @@
           "label": "Normalize CSS zoom",
           "description": "Adjust for CSS page zoom so the correct text is detected on zoomed pages.",
           "default": true
-        },
-        {
-          "key": "scanOnHover",
-          "type": "bool",
-          "label": "Scan on hover",
-          "description": "Scan the word under the cursor as you move the mouse.",
-          "default": false
-        },
-        {
-          "key": "scanOnTouchTap",
-          "type": "bool",
-          "label": "Scan on tap",
-          "description": "Scan the word you tap.",
-          "default": true
-        },
-        {
-          "key": "sentenceExtent",
-          "type": "int",
-          "label": "Sentence context length",
-          "description": "How many surrounding characters to include as sentence context with each result. 0 turns sentence context off.",
-          "default": 200,
-          "min": 0,
-          "max": 1000
         },
         {
           "key": "alphanumeric",
@@ -152,12 +99,12 @@
     },
     {
       "id": "da.default.general",
-      "name": "MeCab Furigana",
+      "name": "Readings",
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
       "kind": "general",
-      "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab.",
+      "description": "Annotates text with reading (furigana) ruby tags via the language processor.",
       "author": "DaLang",
       "hosts": [
         "<all_urls>"
@@ -166,8 +113,15 @@
         {
           "key": "enabled",
           "type": "bool",
-          "label": "Show furigana",
+          "label": "Show readings",
           "default": true
+        },
+        {
+          "key": "reading",
+          "type": "choice",
+          "label": "Reading script",
+          "options": ["hiragana", "katakana"],
+          "default": "hiragana"
         }
       ],
       "codeUrl": "https://raw.githubusercontent.com/CaptainDario/da-lang-plugins/main/packs/default/plugins/general/script.dap"

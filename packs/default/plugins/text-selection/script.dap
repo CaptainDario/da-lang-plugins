@@ -2127,24 +2127,59 @@ Issues can be reported at ${this._issueUrl}`;
 
   // ../../../../../tmp/text-selection-entry.mjs
   var _s = {
-    scanLength: 16,
-    scanDelay: 20,
     layoutAwareScan: true,
     deepDomScan: false,
     normalizeCssZoom: true,
-    scanOnHover: true,
-    scanOnTouchTap: true,
     scanOnTouchMove: false,
-    sentenceExtent: 200,
     alphanumeric: true,
     selectText: true,
     scanWithoutMouseMove: true
   };
+  var _p = {
+    scanLength: 16,
+    scanDelay: 20,
+    sentenceExtent: 200,
+    scanOnHover: false,
+    scanOnHoverModifier: "none",
+    scanOnTouchTap: true,
+    scanOnTapModifier: "none"
+  };
   var _generator = new TextSourceGenerator();
+  var _lastSource = null;
   if (typeof da !== "undefined") {
     da.onSettingsChanged((s) => {
       _s = { ..._s, ...s };
     });
+    da.onProfileChanged((p) => {
+      _p = { ..._p, ...p };
+    });
+    da.register("applySelection", (range) => {
+      const end = range && range.end || 0;
+      if (!_lastSource || !_lastSource.clone || end <= 0) return false;
+      try {
+        const narrowed = _lastSource.clone();
+        if (narrowed.setEndOffset) narrowed.setEndOffset(end, false, _s.layoutAwareScan);
+        if (narrowed.select) narrowed.select();
+        _lastSource = narrowed;
+        return true;
+      } catch (_) {
+        return false;
+      }
+    });
+  }
+  function _modifierHeld(e, mod) {
+    switch (mod) {
+      case "alt":
+        return !!e.altKey;
+      case "ctrl":
+        return !!e.ctrlKey;
+      case "shift":
+        return !!e.shiftKey;
+      case "meta":
+        return !!e.metaKey;
+      default:
+        return true;
+    }
   }
   function _adjustCoords(x, y) {
     if (!_s.normalizeCssZoom) return { x, y };
@@ -2176,7 +2211,7 @@ Issues can be reported at ${this._issueUrl}`;
     if (!source) return;
     if (source.setEndOffset) {
       try {
-        source.setEndOffset(_s.scanLength, false, _s.layoutAwareScan);
+        source.setEndOffset(_p.scanLength, false, _s.layoutAwareScan);
       } catch (_) {
       }
     }
@@ -2185,6 +2220,7 @@ Issues can be reported at ${this._issueUrl}`;
     if (!fullText || !fullText.trim()) return;
     if (!_s.alphanumeric && !/[\u3000-\u9fff\uf900-\ufaff\u{20000}-\u{2a6df}]/u.test(fullText)) return;
     const text = fullText;
+    _lastSource = source;
     const rects = source.getRects ? source.getRects() : [];
     const rect = rects.length > 0 ? rects[0] : null;
     if (_s.selectText && source.select) {
@@ -2195,8 +2231,8 @@ Issues can be reported at ${this._issueUrl}`;
     }
     let sentence = "";
     let sentenceOffset = 0;
-    if (_s.sentenceExtent > 0) {
-      const extracted = _extractSentence(source, _s.sentenceExtent);
+    if (_p.sentenceExtent > 0) {
+      const extracted = _extractSentence(source, _p.sentenceExtent);
       sentence = extracted.text;
       sentenceOffset = extracted.offset;
     }
@@ -2225,13 +2261,13 @@ Issues can be reported at ${this._issueUrl}`;
     }
     _lastX = e.clientX;
     _lastY = e.clientY;
-    if (!_s.scanOnHover) return;
-    if (_s.scanDelay <= 0) {
+    if (!_p.scanOnHover || !_modifierHeld(e, _p.scanOnHoverModifier)) return;
+    if (_p.scanDelay <= 0) {
       _scanAt(_lastX, _lastY);
       return;
     }
     clearTimeout(_timeoutId);
-    _timeoutId = setTimeout(() => _scanAt(_lastX, _lastY), _s.scanDelay);
+    _timeoutId = setTimeout(() => _scanAt(_lastX, _lastY), _p.scanDelay);
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (!_s.scanWithoutMouseMove) return;
@@ -2241,8 +2277,8 @@ Issues can be reported at ${this._issueUrl}`;
     if (_s.scanWithoutMouseMove) _scanAt(_lastX, _lastY);
   });
   document.addEventListener("pointerup", (e) => {
-    if (typeof da !== "undefined") da.log("debug", "input", "pointerup received; scanOnTouchTap=" + _s.scanOnTouchTap);
-    if (!_s.scanOnTouchTap) return;
+    if (typeof da !== "undefined") da.log("debug", "input", "pointerup received; scanOnTouchTap=" + _p.scanOnTouchTap);
+    if (!_p.scanOnTouchTap || !_modifierHeld(e, _p.scanOnTapModifier)) return;
     _scanAt(e.clientX, e.clientY);
   }, { passive: true });
   document.addEventListener("touchmove", (e) => {

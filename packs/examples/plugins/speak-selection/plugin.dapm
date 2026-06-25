@@ -1,0 +1,25 @@
+{
+  "id": "da.examples.speak-selection",
+  "name": "Speak Selection",
+  "version": "0.1.0",
+  "runtime": "webview",
+  "family": "browserPlugin",
+  "kind": "general",
+  "description": "Reference host-capability plugin — adds a floating button that speaks the current selection through da.host.tts, and logs da.host.tts.engines() on load. Demonstrates the da.host call-and-await channel.",
+  "author": "DaLang",
+  "hosts": ["<all_urls>"],
+  "settings": [
+    {
+      "key": "enabled",
+      "type": "bool",
+      "label": "Show speak button",
+      "default": true
+    },
+    {
+      "key": "engine",
+      "type": "string",
+      "label": "TTS engine id (blank = default)",
+      "default": ""
+    }
+  ]
+}

@@ -76,12 +76,4 @@
     da.emit('log', { level: 'info', message: 'settings applied' });
   });
 
-  // ── Boot ──────────────────────────────────────────────────────────────────
-
-  cfg.invertColors = da.settings.invertColors;
-  cfg.fontSize     = da.settings.fontSize;
-  cfg.opacity      = da.settings.opacity;
-  cfg.injectText   = da.settings.injectText;
-  cfg.theme        = da.settings.theme;
-  apply();
 })();

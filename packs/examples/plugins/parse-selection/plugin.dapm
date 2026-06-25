@@ -1,0 +1,14 @@
+{
+  "id": "da.examples.parse-selection",
+  "name": "Parse Selection",
+  "version": "0.1.0",
+  "runtime": "webview",
+  "family": "browserPlugin",
+  "kind": "general",
+  "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less parse capability.",
+  "author": "DaLang",
+  "hosts": ["<all_urls>"],
+  "settings": [
+    { "key": "enabled", "type": "bool", "label": "Show parse panel on selection", "default": true }
+  ]
+}

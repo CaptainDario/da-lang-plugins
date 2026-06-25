@@ -81,21 +81,11 @@
   // ── Live settings updates ──────────────────────────────────────────────────
 
   da.onSettingsChanged(function (s) {
-    var rewire = s.trigger !== cfg.trigger;
     cfg.enabled     = s.enabled;
     cfg.minLength   = s.minLength;
     cfg.sensitivity = s.sensitivity;
     cfg.prefix      = s.prefix;
     cfg.trigger     = s.trigger;
-    if (rewire) wire();
+    wire();
   });
-
-  // ── Boot ───────────────────────────────────────────────────────────────────
-
-  cfg.enabled     = da.settings.enabled;
-  cfg.minLength   = da.settings.minLength;
-  cfg.sensitivity = da.settings.sensitivity;
-  cfg.prefix      = da.settings.prefix;
-  cfg.trigger     = da.settings.trigger;
-  wire();
 })();

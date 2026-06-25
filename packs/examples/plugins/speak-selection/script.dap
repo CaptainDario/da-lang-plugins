@@ -1,0 +1,65 @@
+(function () {
+  var cfg = { enabled: true, engine: '' };
+  var button = null;
+
+  // ── Speak via the host TTS capability ───────────────────────────────────────
+
+  function speak(text) {
+    if (!text) return;
+    da.host
+      .tts(text, { engine: cfg.engine || undefined })
+      .then(function () {
+        da.log('info', 'tts', 'spoke: ' + text);
+      })
+      .catch(function (e) {
+        da.log('error', 'tts', 'speak failed: ' + String(e));
+      });
+  }
+
+  // The page's own selection; falls back to the title so the button is testable
+  // even with nothing selected.
+  function currentText() {
+    var sel = window.getSelection ? String(window.getSelection()) : '';
+    return sel && sel.trim() ? sel : document.title;
+  }
+
+  // ── Floating trigger button ─────────────────────────────────────────────────
+
+  function ensureButton() {
+    if (!cfg.enabled) {
+      if (button) { button.remove(); button = null; }
+      return;
+    }
+    if (button) return;
+    button = document.createElement('button');
+    button.textContent = '🔊';
+    button.title = 'Speak selection';
+    button.style.cssText =
+      'position:fixed;right:16px;bottom:16px;z-index:2147483647;' +
+      'width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;' +
+      'font-size:20px;background:#1a73e8;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);';
+    button.addEventListener('click', function (e) {
+      e.preventDefault();
+      speak(currentText());
+    });
+    document.body && document.body.appendChild(button);
+  }
+
+  // ── Live settings ────────────────────────────────────────────────────────────
+
+  da.onSettingsChanged(function (s) {
+    cfg.enabled = s.enabled;
+    cfg.engine = s.engine || '';
+    ensureButton();
+  });
+
+  // Prove the channel: list the TTS engines usable right now.
+  da.host
+    .tts.engines()
+    .then(function (engines) {
+      da.log('info', 'tts', 'engines: ' + JSON.stringify(engines));
+    })
+    .catch(function (e) {
+      da.log('error', 'tts', 'engines() failed: ' + String(e));
+    });
+})();

@@ -59,6 +59,37 @@
       "codeUrl": "plugins/general/script.dap"
     },
     {
+      "id": "da.examples.speak-selection",
+      "name": "Speak Selection",
+      "version": "0.1.0",
+      "runtime": "webview",
+      "family": "browserPlugin",
+      "kind": "general",
+      "description": "Reference host-capability plugin — adds a floating button that speaks the current selection through da.host.tts, and logs da.host.tts.engines() on load. Demonstrates the da.host call-and-await channel.",
+      "author": "DaLang",
+      "hosts": ["<all_urls>"],
+      "settings": [
+        { "key": "enabled", "type": "bool",   "label": "Show speak button",               "default": true },
+        { "key": "engine",  "type": "string", "label": "TTS engine id (blank = default)",  "default": "" }
+      ],
+      "codeUrl": "plugins/speak-selection/script.dap"
+    },
+    {
+      "id": "da.examples.parse-selection",
+      "name": "Parse Selection",
+      "version": "0.1.0",
+      "runtime": "webview",
+      "family": "browserPlugin",
+      "kind": "general",
+      "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less parse capability.",
+      "author": "DaLang",
+      "hosts": ["<all_urls>"],
+      "settings": [
+        { "key": "enabled", "type": "bool", "label": "Show parse panel on selection", "default": true }
+      ],
+      "codeUrl": "plugins/parse-selection/script.dap"
+    },
+    {
       "id": "da.examples.settings-bool",
       "name": "Settings: Bool",
       "version": "0.1.0",

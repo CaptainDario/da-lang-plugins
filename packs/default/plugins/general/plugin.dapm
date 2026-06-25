@@ -1,20 +1,27 @@
 {
   "id": "da.default.general",
-  "name": "MeCab Furigana",
+  "name": "Readings",
   "version": "0.1.0",
   "runtime": "webview",
   "family": "browserPlugin",
   "kind": "general",
-  "description": "Annotates visible Japanese text with furigana ruby tags using da.host.mecab.",
+  "description": "Annotates text with reading (furigana) ruby tags via the language processor.",
   "author": "DaLang",
   "hosts": ["<all_urls>"],
   "settings": [
     {
       "key": "enabled",
       "type": "bool",
-      "label": "Show furigana",
-      "description": "Annotate Japanese text on every page with ruby furigana readings from MeCab.",
+      "label": "Show readings",
+      "description": "Annotate text on every page with reading ruby tags.",
       "default": true
+    },
+    {
+      "key": "reading",
+      "type": "choice",
+      "label": "Reading script",
+      "options": ["hiragana", "katakana"],
+      "default": "hiragana"
     }
   ]
 }

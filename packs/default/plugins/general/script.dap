@@ -1,27 +1,28 @@
 (function () {
-  var cfg = { enabled: true };
+  var cfg = { enabled: true, reading: 'hiragana' };
   var ATTR = 'data-da-furigana';
   var _scheduled = false;
 
-  function isJapanese(text) {
-    return /[぀-ヿ一-鿿]/.test(text);
-  }
-
-  function wrapNode(textNode, surfaces, readings) {
+  function wrapNode(textNode, segments) {
     var frag = document.createDocumentFragment();
-    for (var i = 0; i < surfaces.length; i++) {
-      var surface = surfaces[i];
-      var reading = readings[i];
-      if (reading && reading.trim() && reading !== surface) {
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      // an empty term means the reading IS the text (no furigana)
+      // otherwise the reading is the furigana over term.
+      var hasTerm = !!(seg.term && seg.term.length);
+      var chars = hasTerm ? seg.term : seg.ruby;
+      var furigana = hasTerm ? seg.ruby : '';
+      if (!chars) continue;
+      if (furigana && furigana.trim()) {
         var ruby = document.createElement('ruby');
         ruby.setAttribute(ATTR, '1');
-        ruby.appendChild(document.createTextNode(surface));
+        ruby.appendChild(document.createTextNode(chars));
         var rt = document.createElement('rt');
-        rt.textContent = reading;
+        rt.textContent = furigana;
         ruby.appendChild(rt);
         frag.appendChild(ruby);
       } else {
-        frag.appendChild(document.createTextNode(surface));
+        frag.appendChild(document.createTextNode(chars));
       }
     }
     textNode.parentNode.replaceChild(frag, textNode);
@@ -29,13 +30,25 @@
 
   async function annotateNode(textNode) {
     var text = textNode.nodeValue || '';
-    if (!isJapanese(text)) return;
+    if (!text.trim()) return;
     try {
-      var result = await da.host.mecab(text);
-      if (result && result.surfaces && result.readings) {
-        wrapNode(textNode, result.surfaces, result.readings);
+      // The processor decides relevance: ideographs present → worth furigana.
+      var ideographs = await da.host.language.extractIdeographs([text]);
+      if (!Array.isArray(ideographs) || !ideographs.length) return;
+      var tokens = await da.host.language.parse(text);
+      if (!Array.isArray(tokens) || !tokens.length) return;
+      var pairs = tokens.map(function (t) { return { term: t.surface, reading: t.reading || '' }; });
+      var grouped = await da.host.language.getTermReadingPairs(pairs, {
+        katakana: cfg.reading === 'katakana',
+      });
+      var segments = [];
+      for (var i = 0; i < grouped.length; i++) {
+        for (var j = 0; j < grouped[i].length; j++) segments.push(grouped[i][j]);
       }
-    } catch (_) {}
+      if (segments.length) wrapNode(textNode, segments);
+    } catch (e) {
+      da.log('error', 'readings', String(e));
+    }
   }
 
   function collectTextNodes(root) {
@@ -43,10 +56,14 @@
       acceptNode: function (node) {
         var p = node.parentElement;
         if (!p) return NodeFilter.FILTER_REJECT;
-        if (p.closest('ruby[' + ATTR + ']') || p.closest('script,style,noscript')) {
+        if (p.closest('ruby') || p.closest('script,style,noscript')) {
           return NodeFilter.FILTER_REJECT;
         }
-        return isJapanese(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        // Generic, non-language pre-filter (sync): skip pure-ASCII cheaply; the
+        // processor makes the real call in annotateNode.
+        return /[^\x00-\x7F]/.test(node.nodeValue || '')
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_SKIP;
       },
     });
     var nodes = [];
@@ -80,6 +97,8 @@
 
   da.onSettingsChanged(function (s) {
     cfg.enabled = !!s.enabled;
-    if (cfg.enabled) { schedule(); } else { removeAnnotations(); }
+    cfg.reading = s.reading === 'katakana' ? 'katakana' : 'hiragana';
+    removeAnnotations();
+    if (cfg.enabled) schedule();
   });
 })();

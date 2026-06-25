@@ -1,0 +1,61 @@
+(function () {
+  var cfg = { enabled: true };
+  var panel = null;
+  var _t = null;
+
+  function ensurePanel() {
+    if (panel) return panel;
+    panel = document.createElement('div');
+    panel.setAttribute('data-da-parse', '1');
+    panel.style.cssText =
+      'position:fixed;bottom:12px;right:12px;z-index:2147483647;max-width:340px;' +
+      'max-height:45vh;overflow:auto;background:#202124;color:#e8eaed;' +
+      'font:13px/1.6 system-ui,sans-serif;padding:10px 12px;border-radius:8px;' +
+      'box-shadow:0 2px 12px rgba(0,0,0,.4);';
+    document.body && document.body.appendChild(panel);
+    return panel;
+  }
+
+  function hidePanel() {
+    if (panel) { panel.remove(); panel = null; }
+  }
+
+  function render(tokens) {
+    if (!tokens.length) { hidePanel(); return; }
+    var el = ensurePanel();
+    var rows = '';
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      var reading = t.reading && String(t.reading).trim() ? ' 「' + t.reading + '」' : '';
+      var base = t.base && t.base !== t.surface ? ' → ' + t.base : '';
+      var pos = t.pos && t.pos.length ? ' <span style="opacity:.55">' + t.pos[0] + '</span>' : '';
+      rows += '<div><b>' + t.surface + '</b>' + reading + base + pos + '</div>';
+    }
+    el.innerHTML = rows;
+  }
+
+  async function parseSelection() {
+    if (!cfg.enabled) return;
+    var text = (window.getSelection && String(window.getSelection())) || '';
+    text = text.trim();
+    if (!text) { hidePanel(); return; }
+    try {
+      var tokens = await da.host.language.parse(text);
+      render(Array.isArray(tokens) ? tokens : []);
+    } catch (e) {
+      da.emit('log', { level: 'warn', message: 'parse failed: ' + e });
+    }
+  }
+
+  function schedule() {
+    if (_t) clearTimeout(_t);
+    _t = setTimeout(parseSelection, 250);
+  }
+
+  document.addEventListener('selectionchange', schedule);
+
+  da.onSettingsChanged(function (s) {
+    cfg.enabled = !!s.enabled;
+    if (!cfg.enabled) hidePanel();
+  });
+})();

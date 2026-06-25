@@ -6,14 +6,18 @@
 
   function readAndEmit() {
     if (!cfg.enabled) return;
-    var nodes = document.querySelectorAll(SELECTOR);
-    if (!nodes.length) return;
-    var text = Array.prototype.map.call(nodes, function (n) {
-      return n.textContent;
-    }).join('').trim();
-    if (!text || text === _lastText) return;
-    _lastText = text;
-    da.emit('subtitles', [{ text: text, language: cfg.language, start: 0, end: 0 }]);
+    try {
+      var nodes = document.querySelectorAll(SELECTOR);
+      if (!nodes.length) return;
+      var text = Array.prototype.map.call(nodes, function (n) {
+        return n.textContent;
+      }).join('').trim();
+      if (!text || text === _lastText) return;
+      _lastText = text;
+      da.emit('subtitles', [{ text: text, language: cfg.language, start: 0, end: 0 }]);
+    } catch (e) {
+      da.log('error', 'subtitle', String(e));
+    }
   }
 
   function startObserver() {

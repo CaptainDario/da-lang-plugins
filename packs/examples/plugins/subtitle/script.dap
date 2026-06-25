@@ -60,9 +60,4 @@
     da.emit('subtitles', readSubtitles());
   });
 
-  // ── Boot ──────────────────────────────────────────────────────────────────
-
-  cfg.enabled  = da.settings.enabled;
-  cfg.language = da.settings.language;
-  da.emit('subtitles', readSubtitles());
 })();
