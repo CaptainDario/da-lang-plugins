@@ -4,7 +4,11 @@
   var _scheduled = false;
 
   function wrapNode(textNode, segments) {
-    var frag = document.createDocumentFragment();
+    // Replace the text node with ONE inline wrapper, not a fragment of many
+    // nodes: a flex/grid parent still sees a single child, so its layout isn't
+    // broken (e.g. a button's text getting split apart).
+    var wrapper = document.createElement('span');
+    wrapper.setAttribute(ATTR, '1');
     for (var i = 0; i < segments.length; i++) {
       var seg = segments[i];
       // an empty term means the reading IS the text (no furigana)
@@ -15,17 +19,16 @@
       if (!chars) continue;
       if (furigana && furigana.trim()) {
         var ruby = document.createElement('ruby');
-        ruby.setAttribute(ATTR, '1');
         ruby.appendChild(document.createTextNode(chars));
         var rt = document.createElement('rt');
         rt.textContent = furigana;
         ruby.appendChild(rt);
-        frag.appendChild(ruby);
+        wrapper.appendChild(ruby);
       } else {
-        frag.appendChild(document.createTextNode(chars));
+        wrapper.appendChild(document.createTextNode(chars));
       }
     }
-    textNode.parentNode.replaceChild(frag, textNode);
+    textNode.parentNode.replaceChild(wrapper, textNode);
   }
 
   async function annotateNode(textNode) {
@@ -56,7 +59,9 @@
       acceptNode: function (node) {
         var p = node.parentElement;
         if (!p) return NodeFilter.FILTER_REJECT;
-        if (p.closest('ruby') || p.closest('script,style,noscript')) {
+        if (p.closest('ruby') ||
+            p.closest('[' + ATTR + ']') ||
+            p.closest('script,style,noscript')) {
           return NodeFilter.FILTER_REJECT;
         }
         // Generic, non-language pre-filter (sync): skip pure-ASCII cheaply; the
@@ -73,10 +78,17 @@
   }
 
   function removeAnnotations() {
-    var rubies = document.querySelectorAll('ruby[' + ATTR + ']');
-    rubies.forEach(function (ruby) {
-      var text = ruby.firstChild ? ruby.firstChild.nodeValue : ruby.textContent;
-      ruby.replaceWith(document.createTextNode(text));
+    var wrappers = document.querySelectorAll('span[' + ATTR + ']');
+    wrappers.forEach(function (wrapper) {
+      var text = '';
+      for (var i = 0; i < wrapper.childNodes.length; i++) {
+        var n = wrapper.childNodes[i];
+        // a RUBY's base text is its first child; skip the rt (furigana)
+        text += n.nodeName === 'RUBY'
+          ? (n.firstChild ? n.firstChild.nodeValue : '')
+          : (n.nodeValue || '');
+      }
+      wrapper.replaceWith(document.createTextNode(text));
     });
   }
 

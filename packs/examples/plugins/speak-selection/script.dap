@@ -13,9 +13,13 @@
       });
   }
 
-  // Context-menu item: speaks the text the user selected (passed as args.text).
+  // Context-menu item: speaks the selection. The context menu passes the text
+  // selected at click time (args.text); fall back to the live selection.
   da.register('speak-selection', function (args) {
-    speak(args && args.text ? args.text : '');
+    var text = args && args.text
+      ? args.text
+      : (window.getSelection ? String(window.getSelection()) : '');
+    speak(text);
   });
 
   // Plugins-bar shortcut: speaks the page title.
