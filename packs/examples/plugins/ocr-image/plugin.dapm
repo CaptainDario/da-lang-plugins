@@ -1,0 +1,31 @@
+{
+  "id": "da.examples.ocr-image",
+  "name": "OCR Image",
+  "version": "0.1.0",
+  "runtime": "webview",
+  "family": "browserPlugin",
+  "needs": {"ocr": 1},
+  "kind": "general",
+  "description": "Reference host-capability plugin — adds a context-menu item that recognizes the text in the right-clicked image through da.host.ocr.full and logs it.",
+  "author": "DaLang",
+  "hosts": ["<all_urls>"],
+  "contextMenuItems": [
+    { "id": "scan-image", "label": "Scan image for text" }
+  ],
+  "settings": [
+    {
+      "key": "language",
+      "type": "choice",
+      "label": "OCR language",
+      "options": ["jpn", "eng", "zho", "kor"],
+      "default": "jpn"
+    },
+    {
+      "key": "engine",
+      "type": "choice",
+      "label": "Engine",
+      "options": ["System (fast)", "System (accurate)"],
+      "default": "System (accurate)"
+    }
+  ]
+}

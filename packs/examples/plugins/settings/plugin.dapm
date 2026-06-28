@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {},
   "kind": "general",
   "description": "Reference settings plugin — declares all five setting types (bool, int, double, string, choice) and applies each live via onSettingsChanged so the effect is immediately observable.",
   "author": "DaLang",

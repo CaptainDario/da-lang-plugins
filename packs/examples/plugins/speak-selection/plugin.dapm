@@ -4,6 +4,7 @@
   "version": "0.2.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {"tts": 1},
   "kind": "general",
   "description": "Reference host-capability plugin — speaks the selected text from the OS selection menu and the page title from the plugins bar, both through da.host.tts. Logs da.host.tts.engines() on load.",
   "author": "DaLang",

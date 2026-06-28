@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {"language": 1},
   "kind": "general",
   "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less parse capability.",
   "author": "DaLang",

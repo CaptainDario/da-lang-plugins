@@ -10,6 +10,7 @@
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {},
       "kind": "textSelection",
       "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, and trigger modes.",
       "author": "DaLang",
@@ -29,6 +30,7 @@
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {},
       "kind": "subtitle",
       "description": "Reference subtitle plugin — demonstrates da.register('get'), da.emit('subtitles'), MutationObserver push, and language tagging.",
       "author": "DaLang",
@@ -45,6 +47,7 @@
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {},
       "kind": "general",
       "description": "Reference general plugin — demonstrates DOM modification, da.register for app-callable functions, and da.emit('log').",
       "author": "DaLang",
@@ -64,6 +67,7 @@
       "version": "0.2.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {"tts": 1},
       "kind": "general",
       "description": "Reference host-capability plugin — speaks the selected text from the OS selection menu and the page title from the plugins bar, both through da.host.tts. Logs da.host.tts.engines() on load.",
       "author": "DaLang",
@@ -85,6 +89,7 @@
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {"language": 1},
       "kind": "general",
       "description": "Reference host-capability plugin — tokenizes the current text selection through da.host.language.parse and shows each token's surface, reading, base form, and POS. Demonstrates the engine-less language capability.",
       "author": "DaLang",
@@ -100,6 +105,7 @@
       "version": "0.1.0",
       "runtime": "webview",
       "family": "browserPlugin",
+      "needs": {},
       "kind": "general",
       "description": "Reference settings plugin — declares all five setting types (bool, int, double, string, choice) and applies each live via onSettingsChanged so the effect is immediately observable.",
       "author": "DaLang",
@@ -112,6 +118,26 @@
         { "key": "theme",      "type": "choice", "label": "Force theme",         "options": ["none", "light", "dark"], "default": "none" }
       ],
       "codeUrl": "plugins/settings/script.dap"
+    },
+    {
+      "id": "da.examples.ocr-image",
+      "name": "OCR Image",
+      "version": "0.1.0",
+      "runtime": "webview",
+      "family": "browserPlugin",
+      "needs": {"ocr": 1},
+      "kind": "general",
+      "description": "Reference host-capability plugin — adds a context-menu item that recognizes the text in the right-clicked image through da.host.ocr.full and logs it.",
+      "author": "DaLang",
+      "hosts": ["<all_urls>"],
+      "contextMenuItems": [
+        { "id": "scan-image", "label": "Scan image for text" }
+      ],
+      "settings": [
+        { "key": "language", "type": "choice", "label": "OCR language", "options": ["jpn", "eng", "zho", "kor"], "default": "jpn" },
+        { "key": "engine", "type": "choice", "label": "Engine", "options": ["System (fast)", "System (accurate)"], "default": "System (accurate)" }
+      ],
+      "codeUrl": "plugins/ocr-image/script.dap"
     }
   ]
 }

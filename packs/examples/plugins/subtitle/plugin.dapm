@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {},
   "kind": "subtitle",
   "description": "Reference subtitle plugin — demonstrates da.register('get'), da.emit('subtitles'), MutationObserver push, and language tagging.",
   "author": "DaLang",

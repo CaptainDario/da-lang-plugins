@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {},
   "kind": "textSelection",
   "description": "Reference textSelection plugin — exercises all 5 settings types, live settings updates, selection/clear events, and trigger modes.",
   "author": "DaLang",

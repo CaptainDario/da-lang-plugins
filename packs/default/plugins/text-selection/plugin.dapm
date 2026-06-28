@@ -4,6 +4,7 @@
   "version": "0.1.0-yomitan.26.5.19.0",
   "runtime": "webview",
   "family": "browserPlugin",
+  "needs": {},
   "kind": "textSelection",
   "description": "Detects the word under the cursor and emits it via da.emit('selection'). Uses Yomitan's DOMTextScanner for accurate CJK boundary detection.",
   "author": "DaLang",

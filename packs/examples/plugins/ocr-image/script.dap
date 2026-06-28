@@ -1,0 +1,57 @@
+(function () {
+  var cfg = { language: 'jpn', engine: 'System (accurate)' };
+  var lastImage = null;
+
+  // Remember the image under the most recent right-click / long-press, so the
+  // context-menu handler knows which image to scan.
+  document.addEventListener(
+    'contextmenu',
+    function (e) {
+      var el = e.target;
+      lastImage = el && el.tagName === 'IMG' ? el : null;
+    },
+    true,
+  );
+
+  // Context-menu item: OCRs the right-clicked image (falling back to the first
+  // image on the page) through da.host.ocr.full and logs the recognized text.
+  da.register('scan-image', function () {
+    var img = lastImage || document.querySelector('img');
+    if (!img || !img.src) {
+      da.log('info', 'ocr', 'no image to scan — right-click an image');
+      return;
+    }
+    var level = cfg.engine.indexOf('fast') >= 0 ? 'fast' : 'accurate';
+    fetch(img.src)
+      .then(function (response) { return response.blob(); })
+      .then(function (blob) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onloadend = function () {
+            resolve(String(reader.result).split(',')[1] || '');
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      })
+      .then(function (base64) {
+        return da.host.ocr.full(base64, {
+          languages: [cfg.language],
+          level: level,
+          engine: 'system',
+        });
+      })
+      .then(function (regions) {
+        var text = (regions || []).map(function (region) { return region.text; }).join(' / ');
+        da.log('info', 'ocr', 'scanned image: ' + (text || '(no text found)'));
+      })
+      .catch(function (e) {
+        da.log('error', 'ocr', 'scan failed: ' + String(e));
+      });
+  });
+
+  da.onSettingsChanged(function (settings) {
+    cfg.language = settings.language || 'jpn';
+    cfg.engine = settings.engine || 'System (accurate)';
+  });
+})();

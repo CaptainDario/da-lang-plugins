@@ -13,12 +13,10 @@
       });
   }
 
-  // Context-menu item: speaks the selection. The context menu passes the text
-  // selected at click time (args.text); fall back to the live selection.
-  da.register('speak-selection', function (args) {
-    var text = args && args.text
-      ? args.text
-      : (window.getSelection ? String(window.getSelection()) : '');
+  // Context-menu item: speaks the current page selection, read live. The
+  // selection stays alive while the menu is open (just rendered unfocused).
+  da.register('speak-selection', function () {
+    var text = window.getSelection ? String(window.getSelection()) : '';
     speak(text);
   });
 

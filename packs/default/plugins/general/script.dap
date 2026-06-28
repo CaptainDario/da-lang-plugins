@@ -42,7 +42,7 @@
       if (!Array.isArray(tokens) || !tokens.length) return;
       var pairs = tokens.map(function (t) { return { term: t.surface, reading: t.reading || '' }; });
       var grouped = await da.host.language.getTermReadingPairs(pairs, {
-        katakana: cfg.reading === 'katakana',
+        script: cfg.reading,
       });
       var segments = [];
       for (var i = 0; i < grouped.length; i++) {
